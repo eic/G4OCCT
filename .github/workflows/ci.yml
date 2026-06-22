@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Fetch NIST CTC STEP fixtures
         uses: ./.github/actions/fetch-nist-ctc
@@ -280,7 +280,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install CVMFS
         uses: cvmfs-contrib/github-action-cvmfs@v5
@@ -363,7 +363,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Fetch NIST CTC STEP fixtures
         if: contains(matrix.fixture.id, 'nist-ctc')
@@ -462,7 +462,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download reldebinfo binaries
         uses: actions/download-artifact@v8
@@ -530,7 +530,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download reldebinfo binaries
         uses: actions/download-artifact@v8
@@ -599,7 +599,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download ci-reports artifact
         uses: actions/download-artifact@v8
@@ -768,7 +768,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Fetch NIST CTC STEP fixtures
         uses: ./.github/actions/fetch-nist-ctc
@@ -824,7 +824,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install CVMFS
         uses: cvmfs-contrib/github-action-cvmfs@v5
@@ -878,7 +878,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Fetch NIST CTC STEP fixtures
         uses: ./.github/actions/fetch-nist-ctc
@@ -985,7 +985,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Doxygen
         run: sudo apt-get install -y doxygen
@@ -1020,7 +1020,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download Doxygen API docs
         uses: actions/download-artifact@v8
