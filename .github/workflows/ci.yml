@@ -28,7 +28,7 @@ jobs:
         uses: cvmfs-contrib/github-action-cvmfs@v5
 
       - name: Cache FetchContent dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             _fetchcontent/*-src
@@ -286,7 +286,7 @@ jobs:
         uses: cvmfs-contrib/github-action-cvmfs@v5
 
       - name: Cache FetchContent dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             _fetchcontent/*-src
@@ -777,7 +777,7 @@ jobs:
         uses: cvmfs-contrib/github-action-cvmfs@v5
 
       - name: Cache FetchContent dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             _fetchcontent/*-src
@@ -830,7 +830,7 @@ jobs:
         uses: cvmfs-contrib/github-action-cvmfs@v5
 
       - name: Cache FetchContent dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             _fetchcontent/*-src
@@ -887,7 +887,7 @@ jobs:
         uses: cvmfs-contrib/github-action-cvmfs@v5
 
       - name: Cache FetchContent dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             _fetchcontent/*-src
