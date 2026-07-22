@@ -69,7 +69,7 @@ jobs:
         run: |
           # OpenCASCADE's TKOpenGl build includes <GL/glx.h>.
           sudo apt-get update
-          sudo apt-get install -y libglx-dev
+          sudo apt-get install -y libgl-dev libglx-dev libglew-dev libegl-dev
 
       - name: Set up Spack
         if: steps.cache.outputs.hit != 'true'
