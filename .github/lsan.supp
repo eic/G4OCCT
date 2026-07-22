@@ -45,13 +45,27 @@ leak:G4ThreadLocalSingleton
 # Urban MSC model cache (FTFP_BERT and other physics lists)
 leak:G4UrbanMscModel::InitialiseModelCache
 
+# Geometry voxelization system (Geant4 11.4+)
+# G4VoxelisationHelper::UndertakeOptimisation and G4SmartVoxelHeader constructors
+# allocate internal nodes, consumed nodes, and optimization structures during
+# geometry setup. These structures are owned by G4LogicalVolume but never
+# explicitly freed at process exit. All are process-lifetime allocations.
+leak:G4VoxelisationHelper::UndertakeOptimisation
+leak:G4SmartVoxelHeader::BuildNodes
+leak:G4SmartVoxelHeader::BuildConsumedNodes
+leak:G4SmartVoxelHeader::BuildVoxelsWithinLimits
+
 # Visualization driver singletons and their UI-command registrations
 # G4VisExecutive initialises GMocren and HepRep drivers; their messengers
 # register G4UIcommand objects that are intentionally never freed.
+# Geant4 11.4+ (eic_xl:nightly) creates additional UI commands via
+# G4MatScanMessenger and G4UIcmdWithAnInteger that are not freed on exit.
 leak:G4GMocrenMessenger
 leak:G4HepRepFileXMLWriter::init
 leak:G4UIcommand::G4UIcommandCommonConstructorCode
 leak:G4UIcommand::G4UIcommand
+leak:G4MatScanMessenger
+leak:G4UIcmdWithAnInteger::G4UIcmdWithAnInteger
 
 # RayTracer viewer: allocates a G4OutBitStream pixel buffer and the viewer
 # object itself that are never freed (viewer lifetime == scene handler lifetime,
