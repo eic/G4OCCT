@@ -22,10 +22,19 @@ if(USE_ASAN
   unset(_g4occt_preload_sanitizer_lib)
 
   if(USE_ASAN)
-    execute_process(
-      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libasan.so
-      OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_asan
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      execute_process(
+        COMMAND
+          ${CMAKE_CXX_COMPILER}
+          -print-file-name=libclang_rt.asan-${CMAKE_SYSTEM_PROCESSOR}.so
+        OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_asan
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    else()
+      execute_process(
+        COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libasan.so
+        OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_asan
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
     if(EXISTS "${_g4occt_preload_sanitizer_lib_asan}")
       list(APPEND _g4occt_preload_sanitizer_lib
            "${_g4occt_preload_sanitizer_lib_asan}")
