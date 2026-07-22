@@ -64,6 +64,14 @@ jobs:
             echo "hit=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Install GLX development headers on arm64
+        if: steps.cache.outputs.hit != 'true' && matrix.arch == 'arm64'
+        run: |
+          # OpenCASCADE's TKOpenGl build includes <GL/glx.h>; the arm runner
+          # image does not ship this header by default.
+          sudo apt-get update
+          sudo apt-get install -y libglx-dev
+
       - name: Set up Spack
         if: steps.cache.outputs.hit != 'true'
         uses: spack/setup-spack@v3
