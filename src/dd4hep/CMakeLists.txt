@@ -49,20 +49,18 @@ if(USE_ASAN OR USE_TSAN)
     else()
       set(runtime_library_env_name LD_LIBRARY_PATH)
     endif()
-    set(
-      runtime_library_path
-      $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${runtime_library_env_name}}
+    set(runtime_library_path
+        $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${runtime_library_env_name}}
     )
 
     set(rootmapfile ${CMAKE_SHARED_MODULE_PREFIX}${library}.components)
 
     string(JOIN ":" ld_preload_value ${_g4occt_preload_sanitizer_lib})
     if(ld_preload_value)
-      set(
-        extra_env
-        "LD_PRELOAD=${ld_preload_value}"
-        "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
-        "LSAN_OPTIONS=detect_leaks=0")
+      set(extra_env
+          "LD_PRELOAD=${ld_preload_value}"
+          "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
+          "LSAN_OPTIONS=detect_leaks=0")
     endif()
 
     add_custom_command(
@@ -79,13 +77,13 @@ if(USE_ASAN OR USE_TSAN)
       COMMAND_EXPAND_LISTS)
 
     add_custom_target(
-      Components_${library}
-      ALL
+      Components_${library} ALL
       COMMENT "Building ${rootmapfile}"
       DEPENDS ${rootmapfile})
-    install(FILES $<TARGET_FILE_DIR:${library}>/${rootmapfile}
-            COMPONENT runtime
-            DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(
+      FILES $<TARGET_FILE_DIR:${library}>/${rootmapfile}
+      COMPONENT runtime
+      DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endfunction()
 endif()
 

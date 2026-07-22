@@ -34,14 +34,14 @@ endif()
 
 target_compile_definitions(
   exampleDD4hepSimpleDetector
-  PRIVATE
-    G4OCCT_DD4HEP_SIMPLE_COMPACT="${G4OCCT_DD4HEP_SIMPLE_COMPACT_PATH}"
-    G4OCCT_DD4HEP_PLUGIN_LIBRARY="$<TARGET_FILE:G4OCCTDD4hep>")
+  PRIVATE G4OCCT_DD4HEP_SIMPLE_COMPACT="${G4OCCT_DD4HEP_SIMPLE_COMPACT_PATH}"
+          G4OCCT_DD4HEP_PLUGIN_LIBRARY="$<TARGET_FILE:G4OCCTDD4hep>")
 
 set(_dd4hep_plugin_env
     "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{LD_LIBRARY_PATH}"
     "ROOT_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{ROOT_LIBRARY_PATH}"
-    "DD4HEP_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{DD4HEP_LIBRARY_PATH}")
+    "DD4HEP_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{DD4HEP_LIBRARY_PATH}"
+)
 foreach(ds ${Geant4_DATASETS})
   list(APPEND _dd4hep_plugin_env
        "${Geant4_DATASET_${ds}_ENVVAR}=${Geant4_DATASET_${ds}_PATH}")
@@ -49,21 +49,13 @@ endforeach()
 
 add_test(NAME run_exampleDD4hepSimpleDetector
          COMMAND $<TARGET_FILE:exampleDD4hepSimpleDetector>)
-add_test(NAME ddsim_exampleDD4hepSimpleDetector
-         COMMAND ddsim
-                 --compactFile
-                 ${G4OCCT_DD4HEP_SIMPLE_COMPACT_PATH}
-                 --runType
-                 batch
-                 --enableGun
-                 --gun.particle
-                 geantino
-                 --gun.energy
-                 1*GeV
-                 --numberOfEvents
-                 1
-                 --outputFile
-                 ${CMAKE_CURRENT_BINARY_DIR}/ddsim_exampleDD4hepSimpleDetector.edm4hep.root)
+add_test(
+  NAME ddsim_exampleDD4hepSimpleDetector
+  COMMAND
+    ddsim --compactFile ${G4OCCT_DD4HEP_SIMPLE_COMPACT_PATH} --runType batch
+    --enableGun --gun.particle geantino --gun.energy 1*GeV --numberOfEvents 1
+    --outputFile
+    ${CMAKE_CURRENT_BINARY_DIR}/ddsim_exampleDD4hepSimpleDetector.edm4hep.root)
 set_tests_properties(
   run_exampleDD4hepSimpleDetector
   PROPERTIES WORKING_DIRECTORY
