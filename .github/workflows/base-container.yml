@@ -29,7 +29,7 @@ jobs:
             runner: ubuntu-latest
             spack_target: x86_64_v2
           - arch: arm64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-latest-arm
             spack_target: aarch64
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -64,11 +64,10 @@ jobs:
             echo "hit=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install GLX development headers on arm64
-        if: steps.cache.outputs.hit != 'true' && matrix.arch == 'arm64'
+      - name: Install GLX development headers
+        if: steps.cache.outputs.hit != 'true'
         run: |
-          # OpenCASCADE's TKOpenGl build includes <GL/glx.h>; the arm runner
-          # image does not ship this header by default.
+          # OpenCASCADE's TKOpenGl build includes <GL/glx.h>.
           sudo apt-get update
           sudo apt-get install -y libglx-dev
 
