@@ -10,6 +10,73 @@ cmake_minimum_required(VERSION 3.16)
 # dd4hep_add_plugin() is provided by DD4hepConfig.cmake.  It produces a shared
 # library (libG4OCCTDD4hep.so) and registers it with DD4hep's factory system.
 
+# DD4hep's released dd4hep_generate_rootmap() does not yet expose the
+# DD4HEP_GENERATE_ROOTMAP_EXTRA_ENV hook added upstream in
+# AIDASoft/DD4hep@83da461fbb9d19a95ad2c16b11168b56334ccf51.  Under ASAN/TSAN the
+# uninstrumented listcomponents helper dlopens our instrumented plugin and fails
+# before the sanitizer runtime is initialised.  Override the macro locally until
+# that DD4hep change is released.
+if(USE_ASAN OR USE_TSAN)
+  unset(_g4occt_preload_sanitizer_lib)
+
+  if(USE_ASAN)
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libasan.so
+      OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_asan
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(EXISTS "${_g4occt_preload_sanitizer_lib_asan}")
+      list(APPEND _g4occt_preload_sanitizer_lib
+           "${_g4occt_preload_sanitizer_lib_asan}")
+    endif()
+  endif()
+
+  if(USE_TSAN)
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libtsan.so
+      OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_tsan
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(EXISTS "${_g4occt_preload_sanitizer_lib_tsan}")
+      list(APPEND _g4occt_preload_sanitizer_lib
+           "${_g4occt_preload_sanitizer_lib_tsan}")
+    endif()
+  endif()
+
+  function(dd4hep_generate_rootmap library)
+    if(APPLE)
+      set(ENV_VAR DYLD_LIBRARY_PATH)
+    else()
+      set(ENV_VAR LD_LIBRARY_PATH)
+    endif()
+    set(${ENV_VAR}_VALUE
+        $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${ENV_VAR}})
+
+    set(rootmapfile ${CMAKE_SHARED_MODULE_PREFIX}${library}.components)
+
+    string(JOIN ":" LD_PRELOAD_VALUE ${_g4occt_preload_sanitizer_lib})
+    if(LD_PRELOAD_VALUE)
+      set(EXTRA_ENV
+          "LD_PRELOAD=${LD_PRELOAD_VALUE}"
+          "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
+          "LSAN_OPTIONS=detect_leaks=0")
+    endif()
+
+    add_custom_command(
+      OUTPUT ${rootmapfile}
+      DEPENDS ${library}
+      COMMAND
+        ${CMAKE_COMMAND} -E env "${ENV_VAR}=${${ENV_VAR}_VALUE}" ${EXTRA_ENV}
+        "ROOT_LIBRARY_PATH=${DD4HEP_ROOT_LIBRARY_PATH}"
+        $<TARGET_FILE:DD4hep::listcomponents> -o ${rootmapfile}
+        $<TARGET_FILE_NAME:${library}>
+      WORKING_DIRECTORY ${LIBRARY_OUTPUT_PATH}
+      COMMAND_EXPAND_LISTS)
+
+    add_custom_target(Components_${library} ALL DEPENDS ${rootmapfile})
+    install(FILES $<TARGET_FILE_DIR:${library}>/${rootmapfile}
+            DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  endfunction()
+endif()
+
 dd4hep_add_plugin(
   G4OCCTDD4hep
   SOURCES
@@ -20,25 +87,6 @@ dd4hep_add_plugin(
   G4OCCT_STEPAssemblySD.cc)
 
 target_link_libraries(G4OCCTDD4hep PRIVATE G4OCCT::G4OCCT DD4hep::DDCore)
-
-# ─── Rootmap (components file) ────────────────────────────────────────────────
-#
-# dd4hep_add_plugin() automatically creates a Components_G4OCCTDD4hep target
-# that runs DD4hep's listcomponents binary to generate
-# libG4OCCTDD4hep.components. listcomponents is a pre-built binary in the
-# container; it is NOT instrumented with address or thread sanitizers.  When
-# USE_ASAN or USE_TSAN is ON our plugin is ASAN/TSAN-instrumented, so dlopen
-# inside listcomponents fails with: undefined symbol:
-# __asan_option_detect_stack_use_after_return
-#
-# The .components file is only needed by the standalone dd4hep-plugin CI job.
-# Sanitizer jobs exclude DD4hep tests (-LE dd4hep) and do not need this file.
-# Exclude the Components target from the default build when sanitizers are ON
-# rather than adopting ownership of DD4hep's dd4hep_generate_rootmap function.
-if(USE_ASAN OR USE_TSAN)
-  set_target_properties(Components_G4OCCTDD4hep PROPERTIES EXCLUDE_FROM_ALL
-                                                           TRUE)
-endif()
 
 # ─── Tests ────────────────────────────────────────────────────────────────────
 
