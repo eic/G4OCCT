@@ -33,6 +33,11 @@ find_file(
   NAMES elements.xml
   HINTS "${DD4hep_ROOT}/DDDetectors/compact"
         "${DD4hep_DIR}/../../../DDDetectors/compact" REQUIRED)
+find_file(
+  G4OCCT_DD4HEP_MATERIALS_XML
+  NAMES materials.xml
+  HINTS "${DD4hep_ROOT}/DDDetectors/compact"
+        "${DD4hep_DIR}/../../../DDDetectors/compact" REQUIRED)
 message(STATUS "G4OCCT DD4hep elements: ${G4OCCT_DD4HEP_ELEMENTS_XML}")
 
 # Generate compact XML files with the absolute fixture paths substituted in.
@@ -50,6 +55,7 @@ target_compile_definitions(
   PRIVATE
     G4OCCT_COMPACT_STEP_SOLID="${CMAKE_CURRENT_BINARY_DIR}/compact_step_solid.xml"
     G4OCCT_COMPACT_STEP_ASSEMBLY="${CMAKE_CURRENT_BINARY_DIR}/compact_step_assembly.xml"
+    G4OCCT_DD4HEP_PLUGIN_LIBRARY="$<TARGET_FILE:G4OCCTDD4hep>"
 )
 
 target_include_directories(test_dd4hep_plugins
@@ -59,12 +65,23 @@ target_link_libraries(
   test_dd4hep_plugins PRIVATE G4OCCT::G4OCCT G4OCCTDD4hep DD4hep::DDCore
                               GTest::gtest_main)
 
+if(TARGET Components_G4OCCTDD4hep)
+  add_dependencies(test_dd4hep_plugins Components_G4OCCTDD4hep)
+endif()
+
 # ── CTest registration ────────────────────────────────────────────────────────
 
-add_test(NAME dd4hep_step_solid COMMAND test_dd4hep_plugins
-                                        --gtest_filter=STEPSolidTest.*)
-add_test(NAME dd4hep_step_assembly COMMAND test_dd4hep_plugins
-                                           --gtest_filter=STEPAssemblyTest.*)
+set(_dd4hep_plugin_env
+    "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{LD_LIBRARY_PATH};ROOT_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{ROOT_LIBRARY_PATH};DD4HEP_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{DD4HEP_LIBRARY_PATH}")
 
-set_tests_properties(dd4hep_step_solid dd4hep_step_assembly PROPERTIES LABELS
-                                                                       "dd4hep")
+add_test(NAME dd4hep_step_solid
+         COMMAND $<TARGET_FILE:test_dd4hep_plugins>
+                 --gtest_filter=STEPSolidTest.*)
+add_test(NAME dd4hep_step_assembly
+         COMMAND $<TARGET_FILE:test_dd4hep_plugins>
+                 --gtest_filter=STEPAssemblyTest.*)
+
+set_tests_properties(
+  dd4hep_step_solid dd4hep_step_assembly
+  PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}" ENVIRONMENT
+             "${_dd4hep_plugin_env}" LABELS "dd4hep" TIMEOUT 120)

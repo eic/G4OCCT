@@ -17,7 +17,15 @@
 
   <define>
     <constant name="world_side" value="2000*mm"/>
+    <constant name="world_x" value="world_side/2"/>
+    <constant name="world_y" value="world_side/2"/>
+    <constant name="world_z" value="world_side/2"/>
   </define>
+
+  <includes>
+    <gdmlFile ref="@G4OCCT_DD4HEP_ELEMENTS_XML@"/>
+    <gdmlFile ref="@G4OCCT_DD4HEP_MATERIALS_XML@"/>
+  </includes>
 
   <!--
     The assembly detector uses a material_map to route STEP material names to

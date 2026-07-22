@@ -1,0 +1,180 @@
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
+<!-- Copyright (C) 2026 G4OCCT Contributors -->
+<!--
+  Port of the first VXD barrel layer from the standard DD4hep SimpleDetector
+  example (Simple_ILD.xml). The original ZPlanarTracker layer is rewritten here
+  as explicit STEP-backed detector elements so the support and silicon ladders
+  come from G4OCCT geometry instead of parametric box dimensions.
+-->
+<lccdd>
+  <info name="Simple_ILD_G4OCCT"
+        title="SimpleDetector layer-0 port with STEP-backed ladders"
+        author="G4OCCT Contributors"
+        url="https://github.com/eic/G4OCCT"
+        status="development"
+        version="1.0">
+    <comment>DD4hep compact example that ports the first SimpleDetector VXD layer to G4OCCT STEP solids.</comment>
+  </info>
+
+  <define>
+    <constant name="world_side" value="300*mm"/>
+    <constant name="world_x" value="world_side/2"/>
+    <constant name="world_y" value="world_side/2"/>
+    <constant name="world_z" value="world_side/2"/>
+  </define>
+
+  <includes>
+    <gdmlFile ref="@G4OCCT_DD4HEP_ELEMENTS_XML@"/>
+    <gdmlFile ref="@G4OCCT_DD4HEP_MATERIALS_XML@"/>
+  </includes>
+
+  <materials>
+    <material name="CarbonFiber">
+      <D value="1.7" unit="g/cm3"/>
+      <composite n="1" ref="C"/>
+    </material>
+    <material name="Silicon">
+      <D value="2.33" unit="g/cm3"/>
+      <composite n="1" ref="Si"/>
+    </material>
+  </materials>
+
+  <display>
+    <vis name="VXDSupportVis" alpha="1.0" r="0.0" g="1.0" b="0.0" showDaughters="true" visible="true"/>
+    <vis name="VXDLayerVis" alpha="1.0" r="0.6" g="0.6" b="0.6" showDaughters="true" visible="true"/>
+  </display>
+
+  <detectors>
+    <!--
+      DD4hep SimpleDetector / Simple_ILD layer 0 reference:
+        nLadders = 10
+        ladder   = 11.5 x 62.5 x 1.0 mm
+        sensor   = 11.0 x 62.5 x 0.05 mm
+        phi0     = -90 deg
+      This port keeps the 10-fold barrel arrangement and replaces the original
+      parametric ladder/sensitive boxes with STEP-backed G4OCCT solids.
+    -->
+
+    <detector id="100" name="VXDLayer0Support_0" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="0.0*mm" y="-16.0*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="-90.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+    <detector id="101" name="VXDLayer0Support_1" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="9.404564*mm" y="-12.944272*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="-54.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+    <detector id="102" name="VXDLayer0Support_2" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="15.216904*mm" y="-4.944272*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="-18.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+    <detector id="103" name="VXDLayer0Support_3" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="15.216904*mm" y="4.944272*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="18.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+    <detector id="104" name="VXDLayer0Support_4" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="9.404564*mm" y="12.944272*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="54.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+    <detector id="105" name="VXDLayer0Support_5" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="0.0*mm" y="16.0*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="90.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+    <detector id="106" name="VXDLayer0Support_6" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="-9.404564*mm" y="12.944272*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="126.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+    <detector id="107" name="VXDLayer0Support_7" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="-15.216904*mm" y="4.944272*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="162.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+    <detector id="108" name="VXDLayer0Support_8" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="-15.216904*mm" y="-4.944272*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="198.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+    <detector id="109" name="VXDLayer0Support_9" type="G4OCCT_STEPSolid" vis="VXDSupportVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/support_ladder.step"/>
+      <position x="-9.404564*mm" y="-12.944272*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="234.0*deg"/>
+      <material name="CarbonFiber"/>
+    </detector>
+
+    <detector id="110" name="VXDLayer0Sensor_0" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="0.0*mm" y="-15.95*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="-90.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+    <detector id="111" name="VXDLayer0Sensor_1" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="9.375175*mm" y="-12.903821*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="-54.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+    <detector id="112" name="VXDLayer0Sensor_2" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="15.169351*mm" y="-4.928821*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="-18.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+    <detector id="113" name="VXDLayer0Sensor_3" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="15.169351*mm" y="4.928821*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="18.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+    <detector id="114" name="VXDLayer0Sensor_4" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="9.375175*mm" y="12.903821*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="54.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+    <detector id="115" name="VXDLayer0Sensor_5" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="0.0*mm" y="15.95*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="90.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+    <detector id="116" name="VXDLayer0Sensor_6" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="-9.375175*mm" y="12.903821*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="126.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+    <detector id="117" name="VXDLayer0Sensor_7" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="-15.169351*mm" y="4.928821*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="162.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+    <detector id="118" name="VXDLayer0Sensor_8" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="-15.169351*mm" y="-4.928821*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="198.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+    <detector id="119" name="VXDLayer0Sensor_9" type="G4OCCT_STEPSolid" vis="VXDLayerVis">
+      <step_file path="@G4OCCT_DD4HEP_SIMPLE_STEP_DIR@/sensor_ladder.step"/>
+      <position x="-9.375175*mm" y="-12.903821*mm" z="0.0*mm"/>
+      <rotation x="0.0*deg" y="0.0*deg" z="234.0*deg"/>
+      <material name="Silicon"/>
+    </detector>
+  </detectors>
+</lccdd>

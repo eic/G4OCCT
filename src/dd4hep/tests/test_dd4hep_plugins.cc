@@ -20,6 +20,8 @@
 #include <DD4hep/Volumes.h>
 #include <TGeoTessellated.h>
 
+#include <dlfcn.h>
+
 #include <gtest/gtest.h>
 
 #include <filesystem>
@@ -34,10 +36,22 @@
 #ifndef G4OCCT_COMPACT_STEP_ASSEMBLY
 #error "G4OCCT_COMPACT_STEP_ASSEMBLY must be defined by CMake"
 #endif
+#ifndef G4OCCT_DD4HEP_PLUGIN_LIBRARY
+#error "G4OCCT_DD4HEP_PLUGIN_LIBRARY must be defined by CMake"
+#endif
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 namespace {
+
+void LoadDd4hepPlugin() {
+  void* handle = dlopen(G4OCCT_DD4HEP_PLUGIN_LIBRARY, RTLD_NOW | RTLD_GLOBAL);
+  if (!handle) {
+    throw std::runtime_error("Failed to load DD4hep plugin library '" +
+                             std::string{G4OCCT_DD4HEP_PLUGIN_LIBRARY} +
+                             "': " + dlerror());
+  }
+}
 
 /// Load a compact XML into a fresh Detector instance.
 /// Returns a reference to the singleton that the caller must destroy.
@@ -45,6 +59,7 @@ dd4hep::Detector& LoadCompact(const std::string& path) {
   if (!std::filesystem::exists(path)) {
     throw std::runtime_error("Compact XML not found: " + path);
   }
+  LoadDd4hepPlugin();
   dd4hep::Detector& det = dd4hep::Detector::getInstance();
   det.fromCompact(path);
   return det;
