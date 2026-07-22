@@ -12,11 +12,11 @@ cmake_minimum_required(VERSION 3.16)
 
 # DD4hep's released dd4hep_generate_rootmap() does not yet expose the
 # DD4HEP_GENERATE_ROOTMAP_EXTRA_ENV hook added upstream in
-# AIDASoft/DD4hep@83da461fbb9d19a95ad2c16b11168b56334ccf51.  Under ASAN/TSAN the
-# uninstrumented listcomponents helper dlopens our instrumented plugin and fails
-# before the sanitizer runtime is initialised.  Override the macro locally until
-# that DD4hep change is released.
-if(USE_ASAN OR USE_TSAN)
+# AIDASoft/DD4hep@83da461fbb9d19a95ad2c16b11168b56334ccf51.  Under ASAN/TSAN/UBSAN
+# the uninstrumented listcomponents helper dlopens our instrumented plugin and
+# fails before the sanitizer runtime is initialised.  Override the macro locally
+# until that DD4hep change is released.
+if(USE_ASAN OR USE_TSAN OR USE_UBSAN)
   unset(_g4occt_preload_sanitizer_lib)
 
   if(USE_ASAN)
@@ -38,6 +38,27 @@ if(USE_ASAN OR USE_TSAN)
     if(EXISTS "${_g4occt_preload_sanitizer_lib_tsan}")
       list(APPEND _g4occt_preload_sanitizer_lib
            "${_g4occt_preload_sanitizer_lib_tsan}")
+    endif()
+  endif()
+
+  if(USE_UBSAN)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      execute_process(
+        COMMAND
+          ${CMAKE_CXX_COMPILER} -print-file-name=libclang_rt.ubsan_standalone-${CMAKE_SYSTEM_PROCESSOR}.so
+        OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_ubsan
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    else()
+      execute_process(
+        COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libubsan.so
+        OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_ubsan
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
+    if(EXISTS "${_g4occt_preload_sanitizer_lib_ubsan}")
+      if(NOT (USE_ASAN AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+        list(APPEND _g4occt_preload_sanitizer_lib
+             "${_g4occt_preload_sanitizer_lib_ubsan}")
+      endif()
     endif()
   endif()
 
