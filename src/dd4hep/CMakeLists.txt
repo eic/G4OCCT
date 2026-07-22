@@ -48,7 +48,8 @@ if(USE_ASAN OR USE_TSAN)
       set(ENV_VAR LD_LIBRARY_PATH)
     endif()
     set(${ENV_VAR}_VALUE
-        $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${ENV_VAR}})
+        $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${ENV_VAR}}
+    )
 
     set(rootmapfile ${CMAKE_SHARED_MODULE_PREFIX}${library}.components)
 
