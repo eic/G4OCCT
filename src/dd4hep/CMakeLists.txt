@@ -24,9 +24,8 @@ if(USE_ASAN
   if(USE_ASAN)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       execute_process(
-        COMMAND
-          ${CMAKE_CXX_COMPILER}
-          -print-file-name=libclang_rt.asan-${CMAKE_SYSTEM_PROCESSOR}.so
+        COMMAND ${CMAKE_CXX_COMPILER}
+                -print-file-name=libclang_rt.asan-${CMAKE_SYSTEM_PROCESSOR}.so
         OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_asan
         OUTPUT_STRIP_TRAILING_WHITESPACE)
     else()
