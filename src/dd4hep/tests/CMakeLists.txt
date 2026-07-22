@@ -12,6 +12,9 @@ set(G4OCCT_STEP_SOLID_PATH
 set(G4OCCT_STEP_ASSEMBLY_PATH
     "${CMAKE_SOURCE_DIR}/src/tests/fixtures/assembly-comparison/triple-box-v1/shape.step"
 )
+set(G4OCCT_STEP_SOLID_COMPACT "${CMAKE_CURRENT_BINARY_DIR}/compact_step_solid.xml")
+set(G4OCCT_STEP_ASSEMBLY_COMPACT
+    "${CMAKE_CURRENT_BINARY_DIR}/compact_step_assembly.xml")
 
 # ── DD4hep standard elements file ────────────────────────────────────────────
 #
@@ -42,9 +45,9 @@ message(STATUS "G4OCCT DD4hep elements: ${G4OCCT_DD4HEP_ELEMENTS_XML}")
 
 # Generate compact XML files with the absolute fixture paths substituted in.
 configure_file(compact_step_solid.xml.in
-               "${CMAKE_CURRENT_BINARY_DIR}/compact_step_solid.xml" @ONLY)
+               "${G4OCCT_STEP_SOLID_COMPACT}" @ONLY)
 configure_file(compact_step_assembly.xml.in
-               "${CMAKE_CURRENT_BINARY_DIR}/compact_step_assembly.xml" @ONLY)
+               "${G4OCCT_STEP_ASSEMBLY_COMPACT}" @ONLY)
 
 # ── test_dd4hep_plugins ───────────────────────────────────────────────────────
 
@@ -53,8 +56,8 @@ add_executable(test_dd4hep_plugins test_dd4hep_plugins.cc)
 target_compile_definitions(
   test_dd4hep_plugins
   PRIVATE
-    G4OCCT_COMPACT_STEP_SOLID="${CMAKE_CURRENT_BINARY_DIR}/compact_step_solid.xml"
-    G4OCCT_COMPACT_STEP_ASSEMBLY="${CMAKE_CURRENT_BINARY_DIR}/compact_step_assembly.xml"
+    G4OCCT_COMPACT_STEP_SOLID="${G4OCCT_STEP_SOLID_COMPACT}"
+    G4OCCT_COMPACT_STEP_ASSEMBLY="${G4OCCT_STEP_ASSEMBLY_COMPACT}"
     G4OCCT_DD4HEP_PLUGIN_LIBRARY="$<TARGET_FILE:G4OCCTDD4hep>")
 
 target_include_directories(test_dd4hep_plugins
@@ -73,31 +76,48 @@ endif()
 set(_dd4hep_plugin_env
     "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{LD_LIBRARY_PATH}"
     "ROOT_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{ROOT_LIBRARY_PATH}"
-    "DD4HEP_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{DD4HEP_LIBRARY_PATH}"
-)
-foreach(_ds ${Geant4_DATASETS})
+    "DD4HEP_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{DD4HEP_LIBRARY_PATH}")
+foreach(ds ${Geant4_DATASETS})
   list(APPEND _dd4hep_plugin_env
-       "${Geant4_DATASET_${_ds}_ENVVAR}=${Geant4_DATASET_${_ds}_PATH}")
+       "${Geant4_DATASET_${ds}_ENVVAR}=${Geant4_DATASET_${ds}_PATH}")
 endforeach()
 
-add_test(NAME dd4hep_step_solid COMMAND $<TARGET_FILE:test_dd4hep_plugins>
-                                        --gtest_filter=STEPSolidTest.*)
-add_test(NAME dd4hep_step_assembly COMMAND $<TARGET_FILE:test_dd4hep_plugins>
-                                           --gtest_filter=STEPAssemblyTest.*)
-add_test(
-  NAME ddsim_step_solid
-  COMMAND
-    ddsim --compactFile ${CMAKE_CURRENT_BINARY_DIR}/compact_step_solid.xml
-    --runType batch --enableGun --gun.particle geantino --gun.energy 1*GeV
-    --numberOfEvents 1 --outputFile
-    ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_solid.edm4hep.root)
-add_test(
-  NAME ddsim_step_assembly
-  COMMAND
-    ddsim --compactFile ${CMAKE_CURRENT_BINARY_DIR}/compact_step_assembly.xml
-    --runType batch --enableGun --gun.particle geantino --gun.energy 1*GeV
-    --numberOfEvents 1 --outputFile
-    ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_assembly.edm4hep.root)
+add_test(NAME dd4hep_step_solid
+         COMMAND $<TARGET_FILE:test_dd4hep_plugins>
+                 --gtest_filter=STEPSolidTest.*)
+add_test(NAME dd4hep_step_assembly
+         COMMAND $<TARGET_FILE:test_dd4hep_plugins>
+                 --gtest_filter=STEPAssemblyTest.*)
+add_test(NAME ddsim_step_solid
+         COMMAND ddsim
+                 --compactFile
+                 ${G4OCCT_STEP_SOLID_COMPACT}
+                 --runType
+                 batch
+                 --enableGun
+                 --gun.particle
+                 geantino
+                 --gun.energy
+                 1*GeV
+                 --numberOfEvents
+                 1
+                 --outputFile
+                 ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_solid.edm4hep.root)
+add_test(NAME ddsim_step_assembly
+         COMMAND ddsim
+                 --compactFile
+                 ${G4OCCT_STEP_ASSEMBLY_COMPACT}
+                 --runType
+                 batch
+                 --enableGun
+                 --gun.particle
+                 geantino
+                 --gun.energy
+                 1*GeV
+                 --numberOfEvents
+                 1
+                 --outputFile
+                 ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_assembly.edm4hep.root)
 
 set_tests_properties(
   dd4hep_step_solid dd4hep_step_assembly

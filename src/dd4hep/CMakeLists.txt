@@ -41,39 +41,50 @@ if(USE_ASAN OR USE_TSAN)
     endif()
   endif()
 
+  # Build the DD4hep .components file while preloading sanitizer runtimes so
+  # listcomponents can dlopen instrumented plugins safely.
   function(dd4hep_generate_rootmap library)
     if(APPLE)
-      set(ENV_VAR DYLD_LIBRARY_PATH)
+      set(runtime_library_env_name DYLD_LIBRARY_PATH)
     else()
-      set(ENV_VAR LD_LIBRARY_PATH)
+      set(runtime_library_env_name LD_LIBRARY_PATH)
     endif()
-    set(${ENV_VAR}_VALUE
-        $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${ENV_VAR}}
+    set(
+      runtime_library_path
+      $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${runtime_library_env_name}}
     )
 
     set(rootmapfile ${CMAKE_SHARED_MODULE_PREFIX}${library}.components)
 
-    string(JOIN ":" LD_PRELOAD_VALUE ${_g4occt_preload_sanitizer_lib})
-    if(LD_PRELOAD_VALUE)
-      set(EXTRA_ENV
-          "LD_PRELOAD=${LD_PRELOAD_VALUE}"
-          "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
-          "LSAN_OPTIONS=detect_leaks=0")
+    string(JOIN ":" ld_preload_value ${_g4occt_preload_sanitizer_lib})
+    if(ld_preload_value)
+      set(
+        extra_env
+        "LD_PRELOAD=${ld_preload_value}"
+        "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
+        "LSAN_OPTIONS=detect_leaks=0")
     endif()
 
     add_custom_command(
       OUTPUT ${rootmapfile}
       DEPENDS ${library}
       COMMAND
-        ${CMAKE_COMMAND} -E env "${ENV_VAR}=${${ENV_VAR}_VALUE}" ${EXTRA_ENV}
+        ${CMAKE_COMMAND} -E env
+        "${runtime_library_env_name}=${runtime_library_path}" ${extra_env}
         "ROOT_LIBRARY_PATH=${DD4HEP_ROOT_LIBRARY_PATH}"
         $<TARGET_FILE:DD4hep::listcomponents> -o ${rootmapfile}
         $<TARGET_FILE_NAME:${library}>
+      COMMENT "Generating ${rootmapfile}"
       WORKING_DIRECTORY ${LIBRARY_OUTPUT_PATH}
       COMMAND_EXPAND_LISTS)
 
-    add_custom_target(Components_${library} ALL DEPENDS ${rootmapfile})
+    add_custom_target(
+      Components_${library}
+      ALL
+      COMMENT "Building ${rootmapfile}"
+      DEPENDS ${rootmapfile})
     install(FILES $<TARGET_FILE_DIR:${library}>/${rootmapfile}
+            COMPONENT runtime
             DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endfunction()
 endif()
