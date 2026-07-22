@@ -37,18 +37,27 @@ target_compile_definitions(
     G4OCCT_DD4HEP_PLUGIN_LIBRARY="$<TARGET_FILE:G4OCCTDD4hep>")
 
 set(_dd4hep_plugin_env
-    "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{LD_LIBRARY_PATH};ROOT_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{ROOT_LIBRARY_PATH};DD4HEP_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{DD4HEP_LIBRARY_PATH}"
-)
+    "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{LD_LIBRARY_PATH}"
+    "ROOT_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{ROOT_LIBRARY_PATH}"
+    "DD4HEP_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{DD4HEP_LIBRARY_PATH}")
+foreach(_ds ${Geant4_DATASETS})
+  list(APPEND _dd4hep_plugin_env
+       "${Geant4_DATASET_${_ds}_ENVVAR}=${Geant4_DATASET_${_ds}_PATH}")
+endforeach()
 
 add_test(NAME run_exampleDD4hepSimpleDetector
          COMMAND $<TARGET_FILE:exampleDD4hepSimpleDetector>)
+add_test(NAME ddsim_exampleDD4hepSimpleDetector
+         COMMAND ddsim --compactFile
+                 ${CMAKE_CURRENT_BINARY_DIR}/Simple_ILD_G4OCCT.xml --runType
+                 batch --enableGun --gun.particle geantino --gun.energy 1*GeV
+                 --numberOfEvents 1 --outputFile
+                 ${CMAKE_CURRENT_BINARY_DIR}/ddsim_exampleDD4hepSimpleDetector.edm4hep.root)
 set_tests_properties(
   run_exampleDD4hepSimpleDetector
-  PROPERTIES WORKING_DIRECTORY
-             "${CMAKE_CURRENT_BINARY_DIR}"
-             ENVIRONMENT
-             "${_dd4hep_plugin_env}"
-             LABELS
-             "dd4hep"
-             TIMEOUT
-             120)
+  PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}" ENVIRONMENT
+             "${_dd4hep_plugin_env}" LABELS "dd4hep" TIMEOUT 120)
+set_tests_properties(
+  ddsim_exampleDD4hepSimpleDetector
+  PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}" ENVIRONMENT
+             "${_dd4hep_plugin_env}" LABELS "dd4hep;ddsim" TIMEOUT 120)
