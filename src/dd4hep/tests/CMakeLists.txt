@@ -55,8 +55,7 @@ target_compile_definitions(
   PRIVATE
     G4OCCT_COMPACT_STEP_SOLID="${CMAKE_CURRENT_BINARY_DIR}/compact_step_solid.xml"
     G4OCCT_COMPACT_STEP_ASSEMBLY="${CMAKE_CURRENT_BINARY_DIR}/compact_step_assembly.xml"
-    G4OCCT_DD4HEP_PLUGIN_LIBRARY="$<TARGET_FILE:G4OCCTDD4hep>"
-)
+    G4OCCT_DD4HEP_PLUGIN_LIBRARY="$<TARGET_FILE:G4OCCTDD4hep>")
 
 target_include_directories(test_dd4hep_plugins
                            PRIVATE ${CMAKE_SOURCE_DIR}/src/tests)
@@ -72,16 +71,21 @@ endif()
 # ── CTest registration ────────────────────────────────────────────────────────
 
 set(_dd4hep_plugin_env
-    "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{LD_LIBRARY_PATH};ROOT_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{ROOT_LIBRARY_PATH};DD4HEP_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{DD4HEP_LIBRARY_PATH}")
+    "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{LD_LIBRARY_PATH};ROOT_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{ROOT_LIBRARY_PATH};DD4HEP_LIBRARY_PATH=$<TARGET_FILE_DIR:G4OCCTDD4hep>:$ENV{DD4HEP_LIBRARY_PATH}"
+)
 
-add_test(NAME dd4hep_step_solid
-         COMMAND $<TARGET_FILE:test_dd4hep_plugins>
-                 --gtest_filter=STEPSolidTest.*)
-add_test(NAME dd4hep_step_assembly
-         COMMAND $<TARGET_FILE:test_dd4hep_plugins>
-                 --gtest_filter=STEPAssemblyTest.*)
+add_test(NAME dd4hep_step_solid COMMAND $<TARGET_FILE:test_dd4hep_plugins>
+                                        --gtest_filter=STEPSolidTest.*)
+add_test(NAME dd4hep_step_assembly COMMAND $<TARGET_FILE:test_dd4hep_plugins>
+                                           --gtest_filter=STEPAssemblyTest.*)
 
 set_tests_properties(
   dd4hep_step_solid dd4hep_step_assembly
-  PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}" ENVIRONMENT
-             "${_dd4hep_plugin_env}" LABELS "dd4hep" TIMEOUT 120)
+  PROPERTIES WORKING_DIRECTORY
+             "${CMAKE_CURRENT_BINARY_DIR}"
+             ENVIRONMENT
+             "${_dd4hep_plugin_env}"
+             LABELS
+             "dd4hep"
+             TIMEOUT
+             120)

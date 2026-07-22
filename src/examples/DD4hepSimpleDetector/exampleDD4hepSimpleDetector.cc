@@ -30,16 +30,14 @@ void LoadDd4hepPlugin() {
   void* handle = dlopen(G4OCCT_DD4HEP_PLUGIN_LIBRARY, RTLD_NOW | RTLD_GLOBAL);
   if (!handle) {
     throw std::runtime_error("Failed to load DD4hep plugin library '" +
-                             std::string{G4OCCT_DD4HEP_PLUGIN_LIBRARY} +
-                             "': " + dlerror());
+                             std::string{G4OCCT_DD4HEP_PLUGIN_LIBRARY} + "': " + dlerror());
   }
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
-  const std::string compact_path =
-      argc > 1 ? argv[1] : std::string{G4OCCT_DD4HEP_SIMPLE_COMPACT};
+  const std::string compact_path = argc > 1 ? argv[1] : std::string{G4OCCT_DD4HEP_SIMPLE_COMPACT};
 
   try {
     if (!std::filesystem::exists(compact_path)) {
@@ -51,7 +49,7 @@ int main(int argc, char** argv) {
     dd4hep::Detector& detector = dd4hep::Detector::getInstance();
     detector.fromCompact(compact_path);
 
-    const auto& children = detector.world().children();
+    const auto& children      = detector.world().children();
     std::size_t support_count = 0;
     std::size_t sensor_count  = 0;
 

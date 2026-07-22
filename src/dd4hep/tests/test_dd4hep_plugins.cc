@@ -48,8 +48,7 @@ void LoadDd4hepPlugin() {
   void* handle = dlopen(G4OCCT_DD4HEP_PLUGIN_LIBRARY, RTLD_NOW | RTLD_GLOBAL);
   if (!handle) {
     throw std::runtime_error("Failed to load DD4hep plugin library '" +
-                             std::string{G4OCCT_DD4HEP_PLUGIN_LIBRARY} +
-                             "': " + dlerror());
+                             std::string{G4OCCT_DD4HEP_PLUGIN_LIBRARY} + "': " + dlerror());
   }
 }
 
