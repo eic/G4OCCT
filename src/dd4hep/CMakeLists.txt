@@ -58,10 +58,8 @@ if(USE_ASAN
         OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif()
     if(EXISTS "${_g4occt_preload_sanitizer_lib_ubsan}")
-      if(NOT (USE_ASAN AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-        list(APPEND _g4occt_preload_sanitizer_lib
-             "${_g4occt_preload_sanitizer_lib_ubsan}")
-      endif()
+      list(APPEND _g4occt_preload_sanitizer_lib
+           "${_g4occt_preload_sanitizer_lib_ubsan}")
     endif()
   endif()
 
