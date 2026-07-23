@@ -10,6 +10,10 @@ on:
     paths:
       - '.github/spack.yaml'
   workflow_call:
+    outputs:
+      base_image:
+        description: Immutable hash-scoped base image tag for this run
+        value: ${{ jobs.merge-base.outputs.base_image }}
   workflow_dispatch:
 
 # Single source of truth for the supported architectures.  Every job that
@@ -115,6 +119,8 @@ jobs:
     needs: build-base
     if: "!failure() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)"
     runs-on: ubuntu-latest
+    outputs:
+      base_image: ${{ steps.publish.outputs.base_image }}
     permissions:
       packages: write
 
@@ -138,12 +144,18 @@ jobs:
           HASH_INPUT="$(sha256sum .github/spack.yaml | cut -d' ' -f1)-${{ env.BASE_OS_IMAGE }}"
           echo "hash=$(printf '%s' "$HASH_INPUT" | sha256sum | cut -c1-8)" >> "$GITHUB_OUTPUT"
 
-      - name: Create and push multi-arch :base manifest
+      - name: Create and push multi-arch base manifests
+        id: publish
         run: |
           HASH="${{ steps.spack-hash.outputs.hash }}"
+          BASE_TAG="base-${HASH}"
           IFS=' ' read -ra arches <<< "$ARCHES"
           REFS=()
           for arch in "${arches[@]}"; do
             REFS+=("ghcr.io/eic/g4occt:spack-${HASH}-${arch}")
           done
-          docker buildx imagetools create --tag ghcr.io/eic/g4occt:base "${REFS[@]}"
+          docker buildx imagetools create \
+            --tag ghcr.io/eic/g4occt:${BASE_TAG} \
+            --tag ghcr.io/eic/g4occt:base \
+            "${REFS[@]}"
+          echo "base_image=ghcr.io/eic/g4occt:${BASE_TAG}" >> "$GITHUB_OUTPUT"
