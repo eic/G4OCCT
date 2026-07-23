@@ -85,9 +85,7 @@ public:
   void SetShape(const TopoDS_Shape& shape);
 
   const TopoDS_Shape& Shape() const { return fShape; }
-  std::uint64_t ShapeGeneration() const {
-    return fShapeGeneration.load(std::memory_order_acquire);
-  }
+  std::uint64_t ShapeGeneration() const { return fShapeGeneration.load(std::memory_order_acquire); }
   const AxisAlignedBounds& Bounds() const { return fCachedBounds; }
 
   PointClassification ClassifyPoint(const G4ThreeVector& p, ClassifierCache& classifierCache,

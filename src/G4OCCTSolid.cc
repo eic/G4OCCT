@@ -94,7 +94,8 @@ G4OCCTSolid* G4OCCTSolid::FromSTEP(const G4String& name, const std::string& path
 
   const Standard_Integer nRoots = reader.NbRootsForTransfer();
   if (nRoots == 0) {
-    throw std::runtime_error("G4OCCTSolid::FromSTEP: STEP file \"" + path + "\" contains no root "
+    throw std::runtime_error("G4OCCTSolid::FromSTEP: STEP file \"" + path +
+                             "\" contains no root "
                              "shapes");
   }
   reader.TransferRoots();
@@ -108,9 +109,8 @@ G4OCCTSolid* G4OCCTSolid::FromSTEP(const G4String& name, const std::string& path
 }
 
 EInside G4OCCTSolid::Inside(const G4ThreeVector& p) const {
-  return ToG4Inside(fImpl->kernel.ClassifyPoint(p, fImpl->classifierCache.Get(),
-                                                fImpl->intersectorCache.Get(),
-                                                fImpl->sphereCache.Get()));
+  return ToG4Inside(fImpl->kernel.ClassifyPoint(
+      p, fImpl->classifierCache.Get(), fImpl->intersectorCache.Get(), fImpl->sphereCache.Get()));
 }
 
 G4ThreeVector G4OCCTSolid::SurfaceNormal(const G4ThreeVector& p) const {
@@ -153,8 +153,8 @@ G4GeometryType G4OCCTSolid::GetEntityType() const { return "G4OCCTSolid"; }
 
 G4VisExtent G4OCCTSolid::GetExtent() const {
   const auto& bounds = fImpl->kernel.Bounds();
-  return {bounds.min.x(), bounds.max.x(), bounds.min.y(), bounds.max.y(), bounds.min.z(),
-          bounds.max.z()};
+  return {bounds.min.x(), bounds.max.x(), bounds.min.y(),
+          bounds.max.y(), bounds.min.z(), bounds.max.z()};
 }
 
 void G4OCCTSolid::BoundingLimits(G4ThreeVector& pMin, G4ThreeVector& pMax) const {
@@ -246,9 +246,9 @@ G4Polyhedron* G4OCCTSolid::CreatePolyhedron() const {
     std::unique_lock<std::mutex> lock(fImpl->polyhedronMutex);
     bool cacheWritten = false;
     if (freshPolyhedron && fImpl->kernel.ShapeGeneration() == currentGeneration) {
-      fImpl->cachedPolyhedron   = std::make_unique<G4Polyhedron>(*freshPolyhedron);
+      fImpl->cachedPolyhedron     = std::make_unique<G4Polyhedron>(*freshPolyhedron);
       fImpl->polyhedronGeneration = currentGeneration;
-      cacheWritten              = true;
+      cacheWritten                = true;
     }
     fImpl->polyhedronBuilding = false;
     fImpl->polyhedronCV.notify_all();
