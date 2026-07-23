@@ -33,6 +33,53 @@ sign convention and tolerance model, and returns results in OCCT units
 (typically millimetres for STEP imports), which must be reconciled with
 Geant4's unit system.
 
+### 1.1 Shared kernel / adapter split
+
+As of issue #378, the implementation is split into:
+
+1. a **shared OCCT solid-query kernel** that owns the reusable shape/query
+   state
+2. a **`G4OCCTSolid` Geant4 adapter** that preserves the `G4VSolid` API and
+   owns the Geant4 worker-thread cache storage
+
+The shared kernel is responsible for:
+
+- owning the current `TopoDS_Shape`
+- computing the axis-aligned bounds and per-face cache data
+- building and querying the BVH-backed tessellation metadata used for lower
+  bounds and surface sampling
+- evaluating exact OCCT-backed classification, ray, normal, distance, area,
+  and volume queries
+- maintaining generation-tagged mutable caches that are independent of the
+  `G4VSolid` interface
+
+`G4OCCTSolid` remains responsible for:
+
+- translating between the `G4VSolid` API and the shared kernel
+- owning `G4Cache` thread-local wrappers for the classifier/intersector/sphere
+  contexts used by the Geant4 workflow
+- Geant4-specific visualization plumbing such as `CreatePolyhedron()`
+
+This split is intentionally performance-first: the Geant4-facing hot-path
+algorithms are preserved, and the cache ownership model remains aligned with
+Geant4 worker-thread execution.
+
+### 1.2 Units and tolerance contract
+
+The shared kernel uses the same physical contract as the original
+`G4OCCTSolid` implementation:
+
+- geometric coordinates are interpreted in the OCCT / imported-shape length
+  units used by G4OCCT (millimetres for the current STEP workflow)
+- Geant4-facing coordinates passed through `G4OCCTSolid` are therefore in the
+  same millimetre-based system
+- surface/boundary decisions use `IntersectionTolerance()`, derived from
+  `0.5 * G4GeometryTolerance::GetInstance()->GetSurfaceTolerance()`
+
+Future non-Geant4 adapters may choose a different thread-local ownership model,
+but they must preserve the same unit/tolerance meaning when reusing the shared
+kernel.
+
 ---
 
 ## 2. Function-by-Function Mapping
