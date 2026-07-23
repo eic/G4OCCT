@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     g++ \
     make \
+    libgl1-mesa-dev \
+    libx11-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Use the spack view so cmake can find Geant4 and OpenCASCADE
