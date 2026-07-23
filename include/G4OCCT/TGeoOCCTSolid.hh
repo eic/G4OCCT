@@ -28,7 +28,7 @@ public:
   TGeoOCCTSolid(const char* name, const TopoDS_Shape& shape);
   ~TGeoOCCTSolid() override;
 
-  TGeoOCCTSolid(const TGeoOCCTSolid&) = delete;
+  TGeoOCCTSolid(const TGeoOCCTSolid&)            = delete;
   TGeoOCCTSolid& operator=(const TGeoOCCTSolid&) = delete;
 
   static TGeoOCCTSolid* FromSTEP(const char* name, const std::string& path);
@@ -40,10 +40,10 @@ public:
   Bool_t CouldBeCrossed(const Double_t* point, const Double_t* dir) const override;
   Int_t DistancetoPrimitive(Int_t px, Int_t py) override;
   Double_t DistFromInside(const Double_t* point, const Double_t* dir, Int_t iact = 1,
-                          Double_t step = TGeoShape::Big(),
+                          Double_t step  = TGeoShape::Big(),
                           Double_t* safe = nullptr) const override;
   Double_t DistFromOutside(const Double_t* point, const Double_t* dir, Int_t iact = 1,
-                           Double_t step = TGeoShape::Big(),
+                           Double_t step  = TGeoShape::Big(),
                            Double_t* safe = nullptr) const override;
   TGeoVolume* Divide(TGeoVolume* voldiv, const char* divname, Int_t iaxis, Int_t ndiv,
                      Double_t start, Double_t step) override;

@@ -118,8 +118,8 @@ endif()
 find_package(Geant4 11.3 REQUIRED)
 find_package(OpenCASCADE REQUIRED)
 
-option(BUILD_ROOT_TGEO_SUPPORT
-       "Build public ROOT/TGeo solid adapter support" OFF)
+option(BUILD_ROOT_TGEO_SUPPORT "Build public ROOT/TGeo solid adapter support"
+       OFF)
 if(BUILD_ROOT_TGEO_SUPPORT)
   find_package(ROOT CONFIG REQUIRED COMPONENTS Geom)
 endif()

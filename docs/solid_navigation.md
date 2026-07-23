@@ -62,7 +62,7 @@ The shared kernel is responsible for:
 
 As of issue #379, a second frontend exists:
 
-3. a **`TGeoOCCTSolid` ROOT/TGeo adapter** that exposes the same OCCT-backed
+1. a **`TGeoOCCTSolid` ROOT/TGeo adapter** that exposes the same OCCT-backed
    shape state through the `TGeoShape` navigation interface
 
 `TGeoOCCTSolid` is built behind the optional `BUILD_ROOT_TGEO_SUPPORT` CMake

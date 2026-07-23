@@ -10,10 +10,9 @@
 #include <filesystem>
 
 TEST(TGeoOCCTSolidDD4hepEval, WrapsAsDD4hepSolid) {
-  const auto step =
-      std::filesystem::path(G4OCCT_TEST_SOURCE_DIR) / "fixtures" / "geometry" /
-      "direct-primitives" / "G4Box" / "box-20x30x40-v1" / "shape.step";
-  auto* raw = TGeoOCCTSolid::FromSTEP("dd4hep_box", step.string());
+  const auto step = std::filesystem::path(G4OCCT_TEST_SOURCE_DIR) / "fixtures" / "geometry" /
+                    "direct-primitives" / "G4Box" / "box-20x30x40-v1" / "shape.step";
+  auto* raw       = TGeoOCCTSolid::FromSTEP("dd4hep_box", step.string());
   dd4hep::Solid solid(raw);
   ASSERT_TRUE(solid.isValid());
   TGeoShape* shape = solid;
