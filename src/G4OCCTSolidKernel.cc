@@ -89,11 +89,11 @@ class TriangleRayCast
     : public BVH_Traverse<Standard_Real, 3, BRepExtrema_TriangleSet, Standard_Real> {
 public:
   void SetRay(const BVH_Vec3d& theOrigin, const BVH_Vec3d& theDir, Standard_Real theTolerance) {
-    myOrigin    = theOrigin;
-    myDir       = theDir;
-    myTolerance = theTolerance;
-    myCrossings = 0;
-    myOnSurface = Standard_False;
+    myOrigin     = theOrigin;
+    myDir        = theDir;
+    myTolerance  = theTolerance;
+    myCrossings  = 0;
+    myOnSurface  = Standard_False;
     myDegenerate = Standard_False;
   }
 
@@ -459,7 +459,7 @@ void G4OCCTSolidKernel::ComputeBounds() {
             }
           }
           if (wireCount == 1) {
-            uvPolygon = std::move(poly);
+            uvPolygon         = std::move(poly);
             gp_Dir faceNormal = maybePlane->Axis().Direction();
             if (currentFace.Orientation() == TopAbs_REVERSED) {
               faceNormal.Reverse();
@@ -469,9 +469,8 @@ void G4OCCTSolidKernel::ComputeBounds() {
         }
       }
     }
-    fFaceBoundsCache.push_back(
-        {currentFace, faceBox, std::move(adaptor), std::move(maybePlane), std::move(uvPolygon),
-         std::move(outwardNormal)});
+    fFaceBoundsCache.push_back({currentFace, faceBox, std::move(adaptor), std::move(maybePlane),
+                                std::move(uvPolygon), std::move(outwardNormal)});
     fFaceAdaptorIndex[currentFace.TShape().get()].push_back(idx);
     if (!faceBox.IsVoid()) {
       Standard_Real fx0 = 0.0;
@@ -486,7 +485,7 @@ void G4OCCTSolidKernel::ComputeBounds() {
     }
   }
 
-  fBVHDeflection = kRelativeDeflection * maxFaceDiag;
+  fBVHDeflection  = kRelativeDeflection * maxFaceDiag;
   fAllFacesPlanar = std::all_of(fFaceBoundsCache.begin(), fFaceBoundsCache.end(),
                                 [](const FaceBounds& fb) { return fb.plane.has_value(); });
 
@@ -585,7 +584,7 @@ G4OCCTSolidKernel::TryFindClosestFace(const std::vector<FaceBounds>& faceBoundsC
 
   std::optional<ClosestFaceMatch> bestMatch;
   for (std::size_t i = 0; i < faceBoundsCache.size(); ++i) {
-    const FaceBounds& fb = faceBoundsCache[i];
+    const FaceBounds& fb     = faceBoundsCache[i];
     const G4double threshold = bestMatch.has_value() ? bestMatch->distance : maxDistance;
     if (threshold < G4OCCTSolidKernel::Infinity() && fb.box.Distance(queryBox) > threshold) {
       continue;
@@ -872,9 +871,10 @@ G4ThreeVector G4OCCTSolidKernel::SurfaceNormal(const G4ThreeVector& p) const {
     return TryGetOutwardNormal(fb.adaptor, fb.face, u, v).value_or(FallbackNormal());
   };
 
-  const G4double bvhLB = BVHLowerBoundDistance(p);
-  const G4double seedDist =
-      (fBVHDeflection > 0.0 && bvhLB < G4OCCTSolidKernel::Infinity()) ? bvhLB + 2.0 * fBVHDeflection : G4OCCTSolidKernel::Infinity();
+  const G4double bvhLB        = BVHLowerBoundDistance(p);
+  const G4double seedDist     = (fBVHDeflection > 0.0 && bvhLB < G4OCCTSolidKernel::Infinity())
+                                    ? bvhLB + 2.0 * fBVHDeflection
+                                    : G4OCCTSolidKernel::Infinity();
   const auto closestFaceMatch = TryFindClosestFace(fFaceBoundsCache, p, seedDist);
   if (!closestFaceMatch.has_value()) {
     return FallbackNormal();
@@ -1008,9 +1008,8 @@ G4double G4OCCTSolidKernel::DistanceToIn(const G4ThreeVector& p,
 }
 
 G4double G4OCCTSolidKernel::DistanceToOut(const G4ThreeVector& p, const G4ThreeVector& v,
-                                          IntersectorCache& intersectorCache,
-                                          const G4bool calcNorm, G4bool* validNorm,
-                                          G4ThreeVector* n) const {
+                                          IntersectorCache& intersectorCache, const G4bool calcNorm,
+                                          G4bool* validNorm, G4ThreeVector* n) const {
   if (validNorm != nullptr) {
     *validNorm = false;
   }
@@ -1060,7 +1059,8 @@ G4double G4OCCTSolidKernel::DistanceToOut(const G4ThreeVector& p, const G4ThreeV
     }
   }
 
-  if (minFaceIdx == std::numeric_limits<std::size_t>::max() || minDistance == G4OCCTSolidKernel::Infinity()) {
+  if (minFaceIdx == std::numeric_limits<std::size_t>::max() ||
+      minDistance == G4OCCTSolidKernel::Infinity()) {
     return 0.0;
   }
 
@@ -1098,7 +1098,7 @@ G4double G4OCCTSolidKernel::DistanceToOut(const G4ThreeVector& p,
     }
   } else {
     const G4double bvhDist = BVHLowerBoundDistance(p);
-    d                      = (bvhDist < G4OCCTSolidKernel::Infinity()) ? bvhDist : ExactDistanceToOut(p);
+    d = (bvhDist < G4OCCTSolidKernel::Infinity()) ? bvhDist : ExactDistanceToOut(p);
   }
   TryInsertSphere(sphereCache, p, d);
   return d;
