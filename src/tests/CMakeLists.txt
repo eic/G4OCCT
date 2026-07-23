@@ -108,6 +108,34 @@ g4occt_gtest(test_calculate_extent test_calculate_extent.cc LINK_LIBRARIES
 g4occt_gtest(test_create_polyhedron test_create_polyhedron.cc LINK_LIBRARIES
              G4OCCT)
 
+if(BUILD_ROOT_TGEO_SUPPORT)
+  set(_g4occt_root_tgeo_test_libs G4OCCT)
+  if(TARGET ROOT::Geom)
+    list(APPEND _g4occt_root_tgeo_test_libs ROOT::Geom)
+  else()
+    list(APPEND _g4occt_root_tgeo_test_libs ${ROOT_LIBRARIES})
+  endif()
+
+  g4occt_gtest(test_tgeo_occt_solid test_tgeo_occt_solid.cc LINK_LIBRARIES
+               ${_g4occt_root_tgeo_test_libs})
+  target_compile_definitions(
+    test_tgeo_occt_solid
+    PRIVATE G4OCCT_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  if(NOT TARGET ROOT::Geom)
+    target_include_directories(test_tgeo_occt_solid
+                               PRIVATE ${ROOT_INCLUDE_DIRS})
+  endif()
+
+  find_package(DD4hep QUIET)
+  if(DD4hep_FOUND)
+    g4occt_gtest(test_tgeo_dd4hep_eval test_tgeo_dd4hep_eval.cc LINK_LIBRARIES
+                 ${_g4occt_root_tgeo_test_libs} DD4hep::DDCore)
+    target_compile_definitions(
+      test_tgeo_dd4hep_eval
+      PRIVATE G4OCCT_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+endif()
+
 # ─── test_geometry_validation ────────────────────────────────────────────────
 add_executable(test_geometry_validation geometry/test_geometry_validation.cc)
 target_include_directories(test_geometry_validation

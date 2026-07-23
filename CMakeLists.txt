@@ -118,6 +118,12 @@ endif()
 find_package(Geant4 11.3 REQUIRED)
 find_package(OpenCASCADE REQUIRED)
 
+option(BUILD_ROOT_TGEO_SUPPORT "Build public ROOT/TGeo solid adapter support"
+       OFF)
+if(BUILD_ROOT_TGEO_SUPPORT)
+  find_package(ROOT CONFIG REQUIRED COMPONENTS Geom)
+endif()
+
 # ─── RPATH ────────────────────────────────────────────────────────────────────
 
 # Keep RPATH in the build tree (stated explicitly for clarity).
@@ -134,6 +140,8 @@ add_library(
   G4OCCT
   src/G4OCCTSolidKernel.cc
   src/G4OCCTSolid.cc
+  $<$<BOOL:${BUILD_ROOT_TGEO_SUPPORT}>:src/TGeoOCCTSolid.cc>
+  $<$<BOOL:${BUILD_ROOT_TGEO_SUPPORT}>:src/TGeoOCCTSolidBridge.cc>
   src/G4OCCTLogicalVolume.cc
   src/G4OCCTPlacement.cc
   src/G4OCCTMaterialMap.cc
@@ -153,6 +161,16 @@ target_include_directories(G4OCCT SYSTEM PUBLIC ${Geant4_INCLUDE_DIRS}
 
 target_link_libraries(G4OCCT PUBLIC ${Geant4_LIBRARIES}
                                     ${OpenCASCADE_LIBRARIES})
+
+if(BUILD_ROOT_TGEO_SUPPORT)
+  if(TARGET ROOT::Geom)
+    target_link_libraries(G4OCCT PUBLIC ROOT::Geom)
+  else()
+    target_include_directories(G4OCCT SYSTEM PUBLIC ${ROOT_INCLUDE_DIRS})
+    target_link_libraries(G4OCCT PUBLIC ${ROOT_LIBRARIES})
+  endif()
+  target_compile_definitions(G4OCCT PUBLIC G4OCCT_WITH_ROOT_TGEO_SUPPORT=1)
+endif()
 
 # ─── Tests ────────────────────────────────────────────────────────────────────
 

@@ -60,6 +60,16 @@ The shared kernel is responsible for:
   contexts used by the Geant4 workflow
 - Geant4-specific visualization plumbing such as `CreatePolyhedron()`
 
+As of issue #379, a second frontend exists:
+
+1. a **`TGeoOCCTSolid` ROOT/TGeo adapter** that exposes the same OCCT-backed
+   shape state through the `TGeoShape` navigation interface
+
+`TGeoOCCTSolid` is built behind the optional `BUILD_ROOT_TGEO_SUPPORT` CMake
+switch. It reuses the shared kernel for exact shape queries, while keeping the
+ROOT/TGeo-specific API, bounding-box conventions, and visualization plumbing in
+the adapter layer.
+
 This split is intentionally performance-first: the Geant4-facing hot-path
 algorithms are preserved, and the cache ownership model remains aligned with
 Geant4 worker-thread execution.
@@ -79,6 +89,10 @@ The shared kernel uses the same physical contract as the original
 Future non-Geant4 adapters may choose a different thread-local ownership model,
 but they must preserve the same unit/tolerance meaning when reusing the shared
 kernel.
+
+For `TGeoOCCTSolid`, adapter-facing coordinates use ROOT/TGeo conventions (cm),
+so the adapter is responsible for the explicit cm↔mm conversions at the kernel
+boundary.
 
 ---
 
