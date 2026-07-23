@@ -30,6 +30,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Resolve base image reference
+        id: base-image
+        run: |
+          BASE_IMAGE="${{ needs.build-base.outputs.base_image }}"
+          if [ -z "$BASE_IMAGE" ]; then
+            BASE_IMAGE="ghcr.io/eic/g4occt:base"
+          fi
+          echo "ref=${BASE_IMAGE}" >> "$GITHUB_OUTPUT"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
@@ -63,7 +72,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: BASE_IMAGE=ghcr.io/eic/g4occt:base
+          build-args: BASE_IMAGE=${{ steps.base-image.outputs.ref }}
           cache-from: type=registry,ref=ghcr.io/eic/g4occt:buildcache
           cache-to: type=registry,ref=ghcr.io/eic/g4occt:buildcache,mode=max
 
@@ -76,5 +85,5 @@ jobs:
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: BASE_IMAGE=ghcr.io/eic/g4occt:base
+          build-args: BASE_IMAGE=${{ steps.base-image.outputs.ref }}
           cache-from: type=registry,ref=ghcr.io/eic/g4occt:buildcache
