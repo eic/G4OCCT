@@ -662,7 +662,7 @@ void G4OCCTSolidKernel::TryInsertSphere(SphereCacheData& cache, const G4ThreeVec
   if (d <= minRadius) {
     return;
   }
-  cache = GetOrInitSphereCache(cache);
+  GetOrInitSphereCache(cache);
 
   if (cache.spheres.size() >= kMaxInscribedSpheres && d <= cache.spheres.back().radius) {
     return;
@@ -1128,61 +1128,78 @@ const G4OCCTSolidKernel::SurfaceSamplingCache& G4OCCTSolidKernel::GetOrBuildSurf
   const std::uint64_t currentGen = fShapeGeneration.load(std::memory_order_acquire);
   {
     std::unique_lock<std::mutex> lock(fSurfaceCacheMutex);
+    while (fSurfaceCacheBuilding) {
+      fSurfaceCacheCV.wait(lock);
+      if (fSurfaceCache.has_value() && fSurfaceCacheGeneration == currentGen) {
+        return *fSurfaceCache;
+      }
+    }
     if (fSurfaceCache.has_value() && fSurfaceCacheGeneration == currentGen) {
       return *fSurfaceCache;
     }
+    fSurfaceCacheBuilding = true;
   }
 
-  BRepMesh_IncrementalMesh mesher(fShape, kRelativeDeflection, /*isRelative=*/Standard_True);
-  (void)mesher;
-
   SurfaceSamplingCache cache;
-  for (TopExp_Explorer ex(fShape, TopAbs_FACE); ex.More(); ex.Next()) {
-    const TopoDS_Face& face = TopoDS::Face(ex.Current());
-    TopLoc_Location loc;
-    const Handle(Poly_Triangulation) & triangulation = BRep_Tool::Triangulation(face, loc);
-    if (triangulation.IsNull()) {
-      continue;
-    }
+  try {
+    BRepMesh_IncrementalMesh mesher(fShape, kRelativeDeflection, /*isRelative=*/Standard_True);
+    (void)mesher;
 
-    const auto faceIndex = static_cast<std::uint32_t>(cache.faces.size());
-    cache.faces.push_back(face);
-
-    const gp_Trsf& transform  = loc.Transformation();
-    const bool reverseWinding = face.Orientation() == TopAbs_REVERSED;
-
-    for (Standard_Integer i = 1; i <= triangulation->NbTriangles(); ++i) {
-      Standard_Integer idx1 = 0;
-      Standard_Integer idx2 = 0;
-      Standard_Integer idx3 = 0;
-      triangulation->Triangle(i).Get(idx1, idx2, idx3);
-      if (reverseWinding) {
-        std::swap(idx2, idx3);
+    for (TopExp_Explorer ex(fShape, TopAbs_FACE); ex.More(); ex.Next()) {
+      const TopoDS_Face& face = TopoDS::Face(ex.Current());
+      TopLoc_Location loc;
+      const Handle(Poly_Triangulation) & triangulation = BRep_Tool::Triangulation(face, loc);
+      if (triangulation.IsNull()) {
+        continue;
       }
 
-      const gp_Pnt q1 = triangulation->Node(idx1).Transformed(transform);
-      const gp_Pnt q2 = triangulation->Node(idx2).Transformed(transform);
-      const gp_Pnt q3 = triangulation->Node(idx3).Transformed(transform);
+      const auto faceIndex = static_cast<std::uint32_t>(cache.faces.size());
+      cache.faces.push_back(face);
 
-      const G4ThreeVector v1(q1.X(), q1.Y(), q1.Z());
-      const G4ThreeVector v2(q2.X(), q2.Y(), q2.Z());
-      const G4ThreeVector v3(q3.X(), q3.Y(), q3.Z());
+      const gp_Trsf& transform  = loc.Transformation();
+      const bool reverseWinding = face.Orientation() == TopAbs_REVERSED;
 
-      const G4double area = 0.5 * (v2 - v1).cross(v3 - v1).mag();
-      if (area > 0.0) {
-        cache.totalArea += area;
-        cache.cumulativeAreas.push_back(cache.totalArea);
-        cache.triangles.push_back({v1, v2, v3, faceIndex});
+      for (Standard_Integer i = 1; i <= triangulation->NbTriangles(); ++i) {
+        Standard_Integer idx1 = 0;
+        Standard_Integer idx2 = 0;
+        Standard_Integer idx3 = 0;
+        triangulation->Triangle(i).Get(idx1, idx2, idx3);
+        if (reverseWinding) {
+          std::swap(idx2, idx3);
+        }
+
+        const gp_Pnt q1 = triangulation->Node(idx1).Transformed(transform);
+        const gp_Pnt q2 = triangulation->Node(idx2).Transformed(transform);
+        const gp_Pnt q3 = triangulation->Node(idx3).Transformed(transform);
+
+        const G4ThreeVector v1(q1.X(), q1.Y(), q1.Z());
+        const G4ThreeVector v2(q2.X(), q2.Y(), q2.Z());
+        const G4ThreeVector v3(q3.X(), q3.Y(), q3.Z());
+
+        const G4double area = 0.5 * (v2 - v1).cross(v3 - v1).mag();
+        if (area > 0.0) {
+          cache.totalArea += area;
+          cache.cumulativeAreas.push_back(cache.totalArea);
+          cache.triangles.push_back({v1, v2, v3, faceIndex});
+        }
       }
     }
+  } catch (...) {
+    std::unique_lock<std::mutex> lock(fSurfaceCacheMutex);
+    fSurfaceCacheBuilding = false;
+    lock.unlock();
+    fSurfaceCacheCV.notify_all();
+    throw;
   }
 
   std::unique_lock<std::mutex> lock(fSurfaceCacheMutex);
-  if (fSurfaceCache.has_value() && fSurfaceCacheGeneration == currentGen) {
-    return *fSurfaceCache;
+  if (!(fSurfaceCache.has_value() && fSurfaceCacheGeneration == currentGen)) {
+    fSurfaceCache           = std::move(cache);
+    fSurfaceCacheGeneration = currentGen;
   }
-  fSurfaceCache           = std::move(cache);
-  fSurfaceCacheGeneration = currentGen;
+  fSurfaceCacheBuilding = false;
+  lock.unlock();
+  fSurfaceCacheCV.notify_all();
   return *fSurfaceCache;
 }
 
