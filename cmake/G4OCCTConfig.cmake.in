@@ -13,6 +13,9 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(Geant4 REQUIRED)
 find_dependency(OpenCASCADE REQUIRED)
+if(@BUILD_ROOT_TGEO_SUPPORT@)
+  find_dependency(ROOT REQUIRED COMPONENTS Geom)
+endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/G4OCCTTargets.cmake")
 
