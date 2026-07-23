@@ -3,6 +3,13 @@
 
 #include "G4OCCT/TGeoOCCTSolid.hh"
 
+#include <TBuffer3D.h>
+#include <TCanvas.h>
+#include <TGeoManager.h>
+#include <TGeoMaterial.h>
+#include <TGeoMedium.h>
+#include <TGeoVolume.h>
+#include <TROOT.h>
 #include <TGeoShape.h>
 
 #include <gtest/gtest.h>
@@ -89,6 +96,32 @@ TEST(TGeoOCCTSolid, BBoxAndCapacityAreInCm) {
   EXPECT_NEAR(solid->Capacity(), 24.0, 1e-9);
 }
 
+TEST(TGeoOCCTSolid, MeshHooksProduceDrawableMesh) {
+  auto solid = LoadBox();
+  Int_t nvert = 0;
+  Int_t nsegs = 0;
+  Int_t npols = 0;
+  solid->GetMeshNumbers(nvert, nsegs, npols);
+  EXPECT_GT(nvert, 0);
+  EXPECT_GT(nsegs, 0);
+  EXPECT_GT(npols, 0);
+
+  std::vector<Double_t> points(static_cast<std::size_t>(3 * nvert), 0.0);
+  solid->SetPoints(points.data());
+  bool any_nonzero = false;
+  for (double v : points) {
+    if (v != 0.0) {
+      any_nonzero = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(any_nonzero);
+
+  std::unique_ptr<TBuffer3D> buffer(solid->MakeBuffer3D());
+  ASSERT_NE(buffer, nullptr);
+  solid->SetSegsAndPols(*buffer);
+}
+
 TEST(TGeoOCCTSolid, SphereSafetyUsesCmUnits) {
   auto solid = LoadSphere();
   const Double_t inside[3] = {0.0, 0.0, 0.0};
@@ -96,6 +129,24 @@ TEST(TGeoOCCTSolid, SphereSafetyUsesCmUnits) {
   EXPECT_GT(solid->Safety(inside, kTRUE), 0.0);
   EXPECT_LE(solid->Safety(inside, kTRUE), 1.5);
   EXPECT_NEAR(solid->Safety(outside, kFALSE), 0.5, 1e-6);
+}
+
+TEST(TGeoOCCTSolid, RootDrawingSmoke) {
+  gROOT->SetBatch(kTRUE);
+  auto solid = LoadBox();
+
+  TGeoManager manager("geom", "geom");
+  auto* material = new TGeoMaterial("mat", 1.0, 1.0, 1.0);
+  auto* medium = new TGeoMedium("med", 1, material);
+  auto* top = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
+  manager.SetTopVolume(top);
+  auto* inner = new TGeoVolume("inner", solid.release(), medium);
+  top->AddNode(inner, 1);
+  manager.CloseGeometry();
+
+  TCanvas canvas("tgeoocctsolid", "tgeoocctsolid", 400, 300);
+  inner->Draw();
+  canvas.Update();
 }
 
 } // namespace

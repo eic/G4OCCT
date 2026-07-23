@@ -10,6 +10,7 @@
 #include <array>
 #include <memory>
 #include <string>
+#include <vector>
 
 class TopoDS_Shape;
 
@@ -28,6 +29,16 @@ public:
     std::array<double, 3> origin{0.0, 0.0, 0.0};
   };
 
+  struct DisplayTriangleCm {
+    std::array<double, 3> p1{0.0, 0.0, 0.0};
+    std::array<double, 3> p2{0.0, 0.0, 0.0};
+    std::array<double, 3> p3{0.0, 0.0, 0.0};
+  };
+
+  struct DisplayMeshCm {
+    std::vector<DisplayTriangleCm> triangles;
+  };
+
   explicit TGeoOCCTSolidBridge(const TopoDS_Shape& shape);
   ~TGeoOCCTSolidBridge();
 
@@ -41,6 +52,8 @@ public:
   void SetShape(const TopoDS_Shape& shape);
 
   BoundsCm Bounds() const;
+  const DisplayMeshCm& DisplayMesh() const;
+  std::uint64_t ShapeGeneration() const;
   double CapacityCm3() const;
   double SafetyCm(const double* point_cm, bool inside) const;
   double DistFromOutsideCm(const double* point_cm, const double* dir,

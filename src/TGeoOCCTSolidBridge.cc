@@ -54,6 +54,9 @@ public:
   }
 
   G4OCCTSolidKernel kernel;
+  mutable std::optional<DisplayMeshCm> displayMesh;
+  mutable std::uint64_t displayMeshGeneration{std::numeric_limits<std::uint64_t>::max()};
+  mutable std::mutex displayMeshMutex;
 };
 
 double TGeoOCCTSolidBridge::InfinityCm() { return G4OCCTSolidKernel::Infinity() * kMmToCm; }
@@ -99,6 +102,30 @@ TGeoOCCTSolidBridge::BoundsCm TGeoOCCTSolidBridge::Bounds() const {
       .origin = {center_mm.x() * kMmToCm, center_mm.y() * kMmToCm, center_mm.z() * kMmToCm},
   };
 }
+
+const TGeoOCCTSolidBridge::DisplayMeshCm& TGeoOCCTSolidBridge::DisplayMesh() const {
+  std::unique_lock<std::mutex> lock(fImpl->displayMeshMutex);
+  const std::uint64_t generation = fImpl->kernel.ShapeGeneration();
+  if (fImpl->displayMesh.has_value() && fImpl->displayMeshGeneration == generation) {
+    return *fImpl->displayMesh;
+  }
+
+  DisplayMeshCm mesh;
+  const auto& surfaceCache = fImpl->kernel.GetOrBuildSurfaceCache();
+  mesh.triangles.reserve(surfaceCache.triangles.size());
+  for (const auto& tri : surfaceCache.triangles) {
+    mesh.triangles.push_back(DisplayTriangleCm{
+        .p1 = {tri.p1.x() * kMmToCm, tri.p1.y() * kMmToCm, tri.p1.z() * kMmToCm},
+        .p2 = {tri.p2.x() * kMmToCm, tri.p2.y() * kMmToCm, tri.p2.z() * kMmToCm},
+        .p3 = {tri.p3.x() * kMmToCm, tri.p3.y() * kMmToCm, tri.p3.z() * kMmToCm},
+    });
+  }
+  fImpl->displayMesh = std::move(mesh);
+  fImpl->displayMeshGeneration = generation;
+  return *fImpl->displayMesh;
+}
+
+std::uint64_t TGeoOCCTSolidBridge::ShapeGeneration() const { return fImpl->kernel.ShapeGeneration(); }
 
 double TGeoOCCTSolidBridge::CapacityCm3() const {
   return fImpl->kernel.GetCubicVolume() * kMm3ToCm3;

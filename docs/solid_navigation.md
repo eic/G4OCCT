@@ -70,6 +70,12 @@ switch. It reuses the shared kernel for exact shape queries, while keeping the
 ROOT/TGeo-specific API, bounding-box conventions, and visualization plumbing in
 the adapter layer.
 
+As of issue #380, the ROOT/TGeo display path is backed by a cached tessellated
+mesh derived from the OCCT shape. This mesh exists only as a viewer/export
+artifact used by methods such as `SetPoints`, `SetSegsAndPols`, mesh-number
+queries, and ROOT drawing/buffer generation. The exact OCCT-backed kernel
+remains the only source of truth for navigation and geometric classification.
+
 This split is intentionally performance-first: the Geant4-facing hot-path
 algorithms are preserved, and the cache ownership model remains aligned with
 Geant4 worker-thread execution.

@@ -11,9 +11,12 @@
 #include <TBuffer3D.h>
 #include <TError.h>
 #include <TGeoBBox.h>
+#include <TGeoManager.h>
+#include <TGeoTessellated.h>
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 TGeoOCCTSolid::TGeoOCCTSolid() = default;
@@ -116,17 +119,27 @@ void TGeoOCCTSolid::GetBoundingCylinder(Double_t* param) const {
   fBBoxHelper->GetBoundingCylinder(param);
 }
 
+const TBuffer3D& TGeoOCCTSolid::GetBuffer3D(Int_t reqSections, Bool_t localFrame) const {
+  EnsureDisplayHelper();
+  return fDisplayHelper->GetBuffer3D(reqSections, localFrame);
+}
+
 Int_t TGeoOCCTSolid::GetByteCount() const { return 6 * static_cast<Int_t>(sizeof(Double_t)); }
 
 Bool_t TGeoOCCTSolid::GetPointsOnSegments(Int_t npoints, Double_t* array) const {
-  EnsureBBoxHelper();
-  return fBBoxHelper->GetPointsOnSegments(npoints, array);
+  EnsureDisplayHelper();
+  return fDisplayHelper->GetPointsOnSegments(npoints, array);
 }
 
 Int_t TGeoOCCTSolid::GetFittingBox(const TGeoBBox* parambox, TGeoMatrix* mat, Double_t& dx,
                                    Double_t& dy, Double_t& dz) const {
   EnsureBBoxHelper();
   return fBBoxHelper->GetFittingBox(parambox, mat, dx, dy, dz);
+}
+
+void TGeoOCCTSolid::GetMeshNumbers(Int_t& nvert, Int_t& nsegs, Int_t& npols) const {
+  EnsureDisplayHelper();
+  fDisplayHelper->GetMeshNumbers(nvert, nsegs, npols);
 }
 
 TGeoShape* TGeoOCCTSolid::GetMakeRuntimeShape(TGeoShape* /*mother*/, TGeoMatrix* /*mat*/) const {
@@ -151,10 +164,21 @@ void TGeoOCCTSolid::InspectShape() const {
     return;
   }
   const auto bounds = fBridge->Bounds();
+  EnsureDisplayHelper();
+  Int_t nvert = 0;
+  Int_t nsegs = 0;
+  Int_t npols = 0;
+  fDisplayHelper->GetMeshNumbers(nvert, nsegs, npols);
   Info("InspectShape",
-       "TGeoOCCTSolid '%s' bbox=(dx=%g, dy=%g, dz=%g) cm origin=(%g,%g,%g) cm",
+       "TGeoOCCTSolid '%s' bbox=(dx=%g, dy=%g, dz=%g) cm origin=(%g,%g,%g) cm mesh=(nvert=%d, "
+       "nsegs=%d, npols=%d)",
        GetName(), bounds.dx, bounds.dy, bounds.dz, bounds.origin[0], bounds.origin[1],
-       bounds.origin[2]);
+       bounds.origin[2], nvert, nsegs, npols);
+}
+
+TBuffer3D* TGeoOCCTSolid::MakeBuffer3D() const {
+  EnsureDisplayHelper();
+  return fDisplayHelper->MakeBuffer3D();
 }
 
 Double_t TGeoOCCTSolid::Safety(const Double_t* point, Bool_t in) const {
@@ -170,23 +194,23 @@ void TGeoOCCTSolid::SetDimensions(Double_t* /*param*/) {
 }
 
 void TGeoOCCTSolid::SetPoints(Double_t* points) const {
-  EnsureBBoxHelper();
-  fBBoxHelper->SetPoints(points);
+  EnsureDisplayHelper();
+  fDisplayHelper->SetPoints(points);
 }
 
 void TGeoOCCTSolid::SetPoints(Float_t* points) const {
-  EnsureBBoxHelper();
-  fBBoxHelper->SetPoints(points);
+  EnsureDisplayHelper();
+  fDisplayHelper->SetPoints(points);
 }
 
 void TGeoOCCTSolid::SetSegsAndPols(TBuffer3D& buff) const {
-  EnsureBBoxHelper();
-  fBBoxHelper->SetSegsAndPols(buff);
+  EnsureDisplayHelper();
+  fDisplayHelper->SetSegsAndPols(buff);
 }
 
 void TGeoOCCTSolid::Sizeof3D() const {
-  EnsureBBoxHelper();
-  fBBoxHelper->Sizeof3D();
+  EnsureDisplayHelper();
+  fDisplayHelper->Sizeof3D();
 }
 
 const TopoDS_Shape& TGeoOCCTSolid::GetOCCTShape() const { return fBridge->Shape(); }
@@ -197,6 +221,8 @@ void TGeoOCCTSolid::SetOCCTShape(const TopoDS_Shape& shape) {
   } else {
     fBridge->SetShape(shape);
   }
+  fDisplayHelper.reset();
+  fDisplayGeneration = std::numeric_limits<std::uint64_t>::max();
   ComputeBBox();
 }
 
@@ -212,4 +238,30 @@ void TGeoOCCTSolid::EnsureBBoxHelper() const {
                                                origin);
     }
   }
-}
+  }
+
+  void TGeoOCCTSolid::EnsureDisplayHelper() const {
+    if (!fBridge) {
+      if (!fDisplayHelper) {
+        fDisplayHelper = std::make_unique<TGeoTessellated>(GetName(), 0);
+        fDisplayHelper->CloseShape(true, true, false);
+      }
+      return;
+    }
+
+    const std::uint64_t generation = fBridge->ShapeGeneration();
+    if (fDisplayHelper && fDisplayGeneration == generation) {
+      return;
+    }
+
+    const auto& mesh = fBridge->DisplayMesh();
+    auto helper = std::make_unique<TGeoTessellated>(GetName(), static_cast<int>(mesh.triangles.size()));
+    for (const auto& tri : mesh.triangles) {
+      helper->AddFacet(TGeoTessellated::Vertex_t(tri.p1[0], tri.p1[1], tri.p1[2]),
+                       TGeoTessellated::Vertex_t(tri.p2[0], tri.p2[1], tri.p2[2]),
+                       TGeoTessellated::Vertex_t(tri.p3[0], tri.p3[1], tri.p3[2]));
+    }
+    helper->CloseShape(true, true, false);
+    fDisplayHelper = std::move(helper);
+    fDisplayGeneration = generation;
+  }

@@ -10,9 +10,11 @@
 #include <TGeoShape.h>
 
 #include <memory>
+#include <limits>
 #include <string>
 
 class TGeoBBox;
+class TGeoTessellated;
 class TopoDS_Shape;
 class TGeoMatrix;
 class TBuffer3D;
@@ -50,14 +52,17 @@ public:
   const char* GetAxisName(Int_t iaxis) const override;
   Double_t GetAxisRange(Int_t iaxis, Double_t& xlo, Double_t& xhi) const override;
   void GetBoundingCylinder(Double_t* param) const override;
+  const TBuffer3D& GetBuffer3D(Int_t reqSections, Bool_t localFrame) const override;
   Int_t GetByteCount() const override;
   Bool_t GetPointsOnSegments(Int_t npoints, Double_t* array) const override;
   Int_t GetFittingBox(const TGeoBBox* parambox, TGeoMatrix* mat, Double_t& dx, Double_t& dy,
                       Double_t& dz) const override;
+  void GetMeshNumbers(Int_t& nvert, Int_t& nsegs, Int_t& npols) const override;
   TGeoShape* GetMakeRuntimeShape(TGeoShape* mother, TGeoMatrix* mat) const override;
   Bool_t IsCylType() const override;
   Bool_t IsValidBox() const override;
   void InspectShape() const override;
+  TBuffer3D* MakeBuffer3D() const override;
   Double_t Safety(const Double_t* point, Bool_t in = kTRUE) const override;
   void SetDimensions(Double_t* param) override;
   void SetPoints(Double_t* points) const override;
@@ -70,9 +75,12 @@ public:
 
 private:
   void EnsureBBoxHelper() const;
+  void EnsureDisplayHelper() const;
 
   std::unique_ptr<g4occt::detail::TGeoOCCTSolidBridge> fBridge;
   mutable std::unique_ptr<TGeoBBox> fBBoxHelper;
+  mutable std::unique_ptr<TGeoTessellated> fDisplayHelper;
+  mutable std::uint64_t fDisplayGeneration{std::numeric_limits<std::uint64_t>::max()};
 };
 
 #endif // G4OCCT_TGeoOCCTSolid_hh
