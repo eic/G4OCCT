@@ -848,6 +848,7 @@ jobs:
             cmake -S . -B build \
               -DCMAKE_BUILD_TYPE=Release \
               -DBUILD_TESTING=ON \
+              -DBUILD_EXAMPLES=ON \
               -DBUILD_DD4HEP_PLUGIN=ON \
               -DENABLE_WERROR=ON \
               -DFETCHCONTENT_BASE_DIR="${PWD}/_fetchcontent"

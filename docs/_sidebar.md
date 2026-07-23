@@ -16,6 +16,7 @@
 - **Examples**
   - [B1 — Water Phantom](example_b1.md)
   - [B4c — Sampling Calorimeter](example_b4c.md)
+  - [DD4hep SimpleDetector — STEP-Backed VXD Layer](example_dd4hep_simpledetector.md)
 - **CI Reports**
   - [Test Results](reports/test-results.md)
   - [Solid Benchmark Results](reports/bench-results.md)

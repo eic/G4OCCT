@@ -5,3 +5,7 @@
 
 add_subdirectory(B1)
 add_subdirectory(B4c)
+
+if(TARGET G4OCCTDD4hep)
+  add_subdirectory(DD4hepSimpleDetector)
+endif()
