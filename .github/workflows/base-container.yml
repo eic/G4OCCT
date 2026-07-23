@@ -18,6 +18,7 @@ on:
 # change here.
 env:
   ARCHES: "amd64 arm64"
+  BASE_OS_IMAGE: "ubuntu:24.04"
 
 jobs:
   build-base:
@@ -52,7 +53,8 @@ jobs:
       - name: Compute spack environment hash
         id: spack-hash
         run: |
-          echo "tag=spack-$(sha256sum .github/spack.yaml | cut -c1-8)-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
+          HASH_INPUT="$(sha256sum .github/spack.yaml | cut -d' ' -f1)-${{ env.BASE_OS_IMAGE }}"
+          echo "tag=spack-$(printf '%s' "$HASH_INPUT" | sha256sum | cut -c1-8)-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
 
       - name: Check GHCR for cached base image
         id: cache
@@ -103,7 +105,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           spack -e .github buildcache push \
-            --base-image ubuntu:22.04 \
+            --base-image ${{ env.BASE_OS_IMAGE }} \
             --tag ${{ steps.spack-hash.outputs.tag }} \
             --update-index \
             oci://ghcr.io/eic/g4occt
@@ -133,7 +135,8 @@ jobs:
       - name: Compute spack environment hash
         id: spack-hash
         run: |
-          echo "hash=$(sha256sum .github/spack.yaml | cut -c1-8)" >> "$GITHUB_OUTPUT"
+          HASH_INPUT="$(sha256sum .github/spack.yaml | cut -d' ' -f1)-${{ env.BASE_OS_IMAGE }}"
+          echo "hash=$(printf '%s' "$HASH_INPUT" | sha256sum | cut -c1-8)" >> "$GITHUB_OUTPUT"
 
       - name: Create and push multi-arch :base manifest
         run: |
