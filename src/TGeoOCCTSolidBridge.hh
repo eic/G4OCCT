@@ -34,7 +34,7 @@ public:
   static std::unique_ptr<TGeoOCCTSolidBridge> FromSTEP(const std::string& name,
                                                        const std::string& path);
 
-  TGeoOCCTSolidBridge(const TGeoOCCTSolidBridge&) = delete;
+  TGeoOCCTSolidBridge(const TGeoOCCTSolidBridge&)            = delete;
   TGeoOCCTSolidBridge& operator=(const TGeoOCCTSolidBridge&) = delete;
 
   const TopoDS_Shape& Shape() const;
@@ -45,9 +45,9 @@ public:
   double SafetyCm(const double* point_cm, bool inside) const;
   double DistFromOutsideCm(const double* point_cm, const double* dir,
                            double* safe_cm = nullptr) const;
-  double DistFromInsideCm(const double* point_cm, const double* dir,
-                          double* safe_cm = nullptr, bool calcNorm = false,
-                          double* norm = nullptr, bool* validNorm = nullptr) const;
+  double DistFromInsideCm(const double* point_cm, const double* dir, double* safe_cm = nullptr,
+                          bool calcNorm = false, double* norm = nullptr,
+                          bool* validNorm = nullptr) const;
   PointClassification ClassifyCm(const double* point_cm) const;
   void SurfaceNormalCm(const double* point_cm, double* norm) const;
 

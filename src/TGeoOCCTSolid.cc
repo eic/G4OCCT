@@ -33,13 +33,11 @@ TGeoOCCTSolid* TGeoOCCTSolid::FromSTEP(const char* name, const std::string& path
   return result.release();
 }
 
-Double_t TGeoOCCTSolid::Capacity() const {
-  return fBridge ? fBridge->CapacityCm3() : 0.0;
-}
+Double_t TGeoOCCTSolid::Capacity() const { return fBridge ? fBridge->CapacityCm3() : 0.0; }
 
 void TGeoOCCTSolid::ComputeBBox() {
   EnsureBBoxHelper();
-  const auto bounds = fBridge->Bounds();
+  const auto bounds  = fBridge->Bounds();
   Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
   fBBoxHelper = std::make_unique<TGeoBBox>(GetName(), bounds.dx, bounds.dy, bounds.dz, origin);
 }
@@ -151,8 +149,7 @@ void TGeoOCCTSolid::InspectShape() const {
     return;
   }
   const auto bounds = fBridge->Bounds();
-  Info("InspectShape",
-       "TGeoOCCTSolid '%s' bbox=(dx=%g, dy=%g, dz=%g) cm origin=(%g,%g,%g) cm",
+  Info("InspectShape", "TGeoOCCTSolid '%s' bbox=(dx=%g, dy=%g, dz=%g) cm origin=(%g,%g,%g) cm",
        GetName(), bounds.dx, bounds.dy, bounds.dz, bounds.origin[0], bounds.origin[1],
        bounds.origin[2]);
 }
@@ -204,12 +201,11 @@ void TGeoOCCTSolid::EnsureBBoxHelper() const {
   if (!fBBoxHelper) {
     if (!fBridge) {
       Double_t origin[3] = {0.0, 0.0, 0.0};
-      fBBoxHelper = std::make_unique<TGeoBBox>(GetName(), 0.0, 0.0, 0.0, origin);
+      fBBoxHelper        = std::make_unique<TGeoBBox>(GetName(), 0.0, 0.0, 0.0, origin);
     } else {
-      const auto bounds = fBridge->Bounds();
+      const auto bounds  = fBridge->Bounds();
       Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
-      fBBoxHelper = std::make_unique<TGeoBBox>(GetName(), bounds.dx, bounds.dy, bounds.dz,
-                                               origin);
+      fBBoxHelper = std::make_unique<TGeoBBox>(GetName(), bounds.dx, bounds.dy, bounds.dz, origin);
     }
   }
 }
