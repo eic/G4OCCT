@@ -420,13 +420,11 @@ void G4OCCTSolidKernel::ComputeBounds() {
       AxisAlignedBounds{G4ThreeVector(xMin, yMin, zMin), G4ThreeVector(xMax, yMax, zMax)};
 
   fFaceBoundsCache.clear();
-  fFaceAdaptorIndex.clear();
   G4double maxFaceDiag = 0.0;
   for (TopExp_Explorer ex(fShape, TopAbs_FACE); ex.More(); ex.Next()) {
     Bnd_Box faceBox;
     BRepBndLib::AddOptimal(ex.Current(), faceBox, /*useTriangulation=*/Standard_False);
     const TopoDS_Face& currentFace = TopoDS::Face(ex.Current());
-    const std::size_t idx          = fFaceBoundsCache.size();
     BRepAdaptor_Surface adaptor(currentFace);
     std::optional<gp_Pln> maybePlane;
     std::vector<gp_Pnt2d> uvPolygon;
@@ -471,7 +469,6 @@ void G4OCCTSolidKernel::ComputeBounds() {
     }
     fFaceBoundsCache.push_back({currentFace, faceBox, std::move(adaptor), std::move(maybePlane),
                                 std::move(uvPolygon), std::move(outwardNormal)});
-    fFaceAdaptorIndex[currentFace.TShape().get()].push_back(idx);
     if (!faceBox.IsVoid()) {
       Standard_Real fx0 = 0.0;
       Standard_Real fy0 = 0.0;

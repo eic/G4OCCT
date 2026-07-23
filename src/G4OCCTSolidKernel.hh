@@ -17,7 +17,6 @@
 #include <IntCurvesFace_Intersector.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Shape.hxx>
-#include <TopoDS_TShape.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Pnt2d.hxx>
 
@@ -28,7 +27,6 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -139,7 +137,6 @@ private:
   TopoDS_Shape fShape;
   AxisAlignedBounds fCachedBounds;
   std::vector<FaceBounds> fFaceBoundsCache;
-  std::unordered_map<const TopoDS_TShape*, std::vector<std::size_t>> fFaceAdaptorIndex;
   std::vector<InscribedSphere> fInitialSpheres;
   Handle(BRepExtrema_TriangleSet) fTriangleSet;
   G4double fBVHDeflection{0.0};
