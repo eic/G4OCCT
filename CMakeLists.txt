@@ -132,6 +132,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(
   G4OCCT
+  src/G4OCCTSolidKernel.cc
   src/G4OCCTSolid.cc
   src/G4OCCTLogicalVolume.cc
   src/G4OCCTPlacement.cc

@@ -33,6 +33,55 @@ sign convention and tolerance model, and returns results in OCCT units
 (typically millimetres for STEP imports), which must be reconciled with
 Geant4's unit system.
 
+### 1.1 Shared kernel / adapter split
+
+As of issue #378, the implementation is split into:
+
+1. a **shared OCCT solid-query kernel** that owns the reusable shape/query
+   state
+2. a **`G4OCCTSolid` Geant4 adapter** that preserves the `G4VSolid` API and
+   owns the Geant4 worker-thread cache storage
+
+The shared kernel is responsible for:
+
+- owning the current `TopoDS_Shape`
+- computing the axis-aligned bounds and per-face cache data
+- building and querying the BVH-backed tessellation metadata used for lower
+  bounds and surface sampling
+- evaluating exact OCCT-backed classification, ray, normal, distance, area,
+  and volume queries
+- maintaining generation-tagged mutable caches that are independent of the
+  `G4VSolid` interface
+
+`G4OCCTSolid` remains responsible for:
+
+- translating between the `G4VSolid` API and the shared kernel
+- owning `G4Cache` thread-local wrappers for the classifier/intersector/sphere
+  contexts used by the Geant4 workflow
+- Geant4-specific visualization plumbing such as `CreatePolyhedron()`
+
+This split is intentionally performance-first: the Geant4-facing hot-path
+algorithms are preserved, and the cache ownership model remains aligned with
+Geant4 worker-thread execution.
+
+### 1.2 Units and tolerance contract
+
+The shared kernel uses the same physical contract as the original
+`G4OCCTSolid` implementation:
+
+- geometric coordinates are interpreted in the OCCT / imported-shape length
+  units used by G4OCCT (millimetres for the current STEP workflow)
+- Geant4-facing coordinates passed through `G4OCCTSolid` are therefore in the
+  same millimetre-based system
+- surface/boundary decisions use `IntersectionTolerance()`, derived from
+  `0.5 * G4GeometryTolerance::GetInstance()->GetSurfaceTolerance()`
+
+At present the shared kernel still depends on Geant4 scalar/vector/tolerance
+types and error/reporting facilities. Any future non-Geant4 adapter therefore
+requires an explicit decoupling layer (or kernel refactor) before direct reuse.
+If/when that decoupling is introduced, adapters must preserve the same
+unit/tolerance meaning for equivalent geometry queries.
+
 ---
 
 ## 2. Function-by-Function Mapping
@@ -120,10 +169,10 @@ EInside G4OCCTSolid::Inside(const G4ThreeVector& p) const {
 
 **Notes:**
 
-* The per-thread caches (`fSphereCache`, `fIntersectorCache`) are
+- The per-thread caches (`fSphereCache`, `fIntersectorCache`) are
   `G4Cache<T>` objects so that each worker thread owns independent mutable
   state — the shape itself (`fShape`) is read-only and shared safely.
-* `BRepClass3d_SolidClassifier` is only reached when the parity count is
+- `BRepClass3d_SolidClassifier` is only reached when the parity count is
   ambiguous (no `TopAbs_IN` crossings found, or at least one edge/vertex hit),
   keeping the common-case cost to pure C++ arithmetic plus per-face line/box
   tests.
@@ -222,12 +271,12 @@ G4double G4OCCTSolid::DistanceToIn(const G4ThreeVector& p,
 
 **Notes:**
 
-* Each `IntCurvesFace_Intersector` in the cache is associated with a single
+- Each `IntCurvesFace_Intersector` in the cache is associated with a single
   `TopoDS_Face`; this replaces the previous `IntCurvesFace_ShapeIntersector`
   which operated on the whole shape and could not be prefiltered per-face.
-* The parametric lower bound `kCarTolerance` avoids self-intersection at the
+- The parametric lower bound `kCarTolerance` avoids self-intersection at the
   current surface point.
-* `Precision::Infinite()` from OCCT acts as the upper parametric bound;
+- `Precision::Infinite()` from OCCT acts as the upper parametric bound;
   intersections beyond the simulation world are naturally excluded by the
   navigator's step-length limit.
 
@@ -564,20 +613,20 @@ classifier is rarely constructed.
 
 The navigation hot path has been progressively optimised across multiple PRs:
 
-* **`Inside`** (PRs #197, #214, #221): A four-stage funnel — AABB reject,
+- **`Inside`** (PRs #197, #214, #221): A four-stage funnel — AABB reject,
   inscribed-sphere cache, ray-parity with per-face `Bnd_Box` prefilter,
   and a `BRepClass3d_SolidClassifier` fallback only for degenerate rays —
   reduces the common case to pure arithmetic and avoids heavy OCCT calls
   in the vast majority of queries.
-* **`DistanceToIn/Out(p, v)`** (PR #215): Replaced
+- **`DistanceToIn/Out(p, v)`** (PR #215): Replaced
   `IntCurvesFace_ShapeIntersector` (whole-shape, no prefilter) with a
   per-face `IntCurvesFace_Intersector` loop using cached, pre-expanded
   `Bnd_Box` objects for O(1) per-face rejection.
-* **`DistanceToIn/Out(p)`** (PRs #209, #210): Replaced
+- **`DistanceToIn/Out(p)`** (PRs #209, #210): Replaced
   `BRepExtrema_DistShapeShape` (BRep topology search per call) with a
   BVH-accelerated `PointToMeshDistance` on a pre-built triangle mesh
   (`fTriangleSet`), with a planar-face shortcut for all-planar solids.
-* **Bounding boxes** are computed once at construction and cached in
+- **Bounding boxes** are computed once at construction and cached in
   `fCachedBounds`, eliminating per-call `BRepBndLib::Add` overhead.
 
 Profiling with the navigator benchmark (`bench_navigator`) and Callgrind
@@ -587,9 +636,9 @@ reports (see `callgrind-reports-*/`) continues to guide further work.
 
 Not all `TopoDS_Shape` objects are valid for navigation:
 
-* `TopoDS_Compound` — a group of shapes; does not define an interior/exterior.
-* Open shells — `Inside` is undefined.
-* Shapes with gaps or overlaps in the boundary.
+- `TopoDS_Compound` — a group of shapes; does not define an interior/exterior.
+- Open shells — `Inside` is undefined.
+- Shapes with gaps or overlaps in the boundary.
 
 A shape validation step using `BRepCheck_Analyzer` should be run during
 `G4OCCTSolid` construction, with a descriptive error if the shape is not
