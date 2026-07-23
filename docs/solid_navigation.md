@@ -76,9 +76,11 @@ The shared kernel uses the same physical contract as the original
 - surface/boundary decisions use `IntersectionTolerance()`, derived from
   `0.5 * G4GeometryTolerance::GetInstance()->GetSurfaceTolerance()`
 
-Future non-Geant4 adapters may choose a different thread-local ownership model,
-but they must preserve the same unit/tolerance meaning when reusing the shared
-kernel.
+At present the shared kernel still depends on Geant4 scalar/vector/tolerance
+types and error/reporting facilities. Any future non-Geant4 adapter therefore
+requires an explicit decoupling layer (or kernel refactor) before direct reuse.
+If/when that decoupling is introduced, adapters must preserve the same
+unit/tolerance meaning for equivalent geometry queries.
 
 ---
 

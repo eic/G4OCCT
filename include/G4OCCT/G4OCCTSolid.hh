@@ -58,7 +58,21 @@ public:
   G4Polyhedron* CreatePolyhedron() const override;
   std::ostream& StreamInfo(std::ostream& os) const override;
 
+  /**
+   * Read-only access to the underlying OCCT shape currently used for queries.
+   */
   const TopoDS_Shape& GetOCCTShape() const;
+
+  /**
+   * Replace the underlying OCCT shape.
+   *
+   * @note Updating the shape bumps the kernel generation so each worker-thread
+   * `G4Cache` entry is rebuilt lazily on the next query. This call is not
+   * synchronised with in-flight navigation; do not call it while a simulation
+   * run is in progress.
+   *
+   * @throws std::invalid_argument if @p shape is null.
+   */
   void SetOCCTShape(const TopoDS_Shape& shape);
 
 private:
