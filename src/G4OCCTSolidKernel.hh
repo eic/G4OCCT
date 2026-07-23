@@ -22,6 +22,7 @@
 #include <gp_Pnt2d.hxx>
 
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -150,7 +151,9 @@ private:
   mutable std::mutex fVolumeAreaMutex;
   mutable std::optional<SurfaceSamplingCache> fSurfaceCache;
   mutable std::uint64_t fSurfaceCacheGeneration{std::numeric_limits<std::uint64_t>::max()};
+  mutable bool fSurfaceCacheBuilding{false};
   mutable std::mutex fSurfaceCacheMutex;
+  mutable std::condition_variable fSurfaceCacheCV;
 };
 
 } // namespace g4occt::detail
