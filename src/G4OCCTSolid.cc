@@ -98,8 +98,8 @@ G4OCCTSolid* G4OCCTSolid::FromSTEP(const G4String& name, const std::string& path
                              "shapes");
   }
   if (reader.TransferRoots() <= 0) {
-    throw std::runtime_error("G4OCCTSolid::FromSTEP: failed to transfer STEP roots from \"" +
-                             path + "\"");
+    throw std::runtime_error("G4OCCTSolid::FromSTEP: failed to transfer STEP roots from \"" + path +
+                             "\"");
   }
 
   const TopoDS_Shape shape = reader.OneShape();
