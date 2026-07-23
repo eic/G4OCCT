@@ -71,7 +71,8 @@ public:
    * synchronised with in-flight navigation; do not call it while a simulation
    * run is in progress.
    *
-   * @throws std::invalid_argument if @p shape is null.
+   * @throws std::invalid_argument if @p shape is null or has no computable
+   * bounding box.
    */
   void SetOCCTShape(const TopoDS_Shape& shape);
 
