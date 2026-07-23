@@ -1125,14 +1125,16 @@ G4double G4OCCTSolidKernel::GetSurfaceArea() {
 }
 
 const G4OCCTSolidKernel::SurfaceSamplingCache& G4OCCTSolidKernel::GetOrBuildSurfaceCache() const {
+  const std::uint64_t currentGen = fShapeGeneration.load(std::memory_order_acquire);
+  {
+    std::unique_lock<std::mutex> lock(fSurfaceCacheMutex);
+    if (fSurfaceCache.has_value() && fSurfaceCacheGeneration == currentGen) {
+      return *fSurfaceCache;
+    }
+  }
+
   BRepMesh_IncrementalMesh mesher(fShape, kRelativeDeflection, /*isRelative=*/Standard_True);
   (void)mesher;
-
-  std::unique_lock<std::mutex> lock(fSurfaceCacheMutex);
-  const std::uint64_t currentGen = fShapeGeneration.load(std::memory_order_acquire);
-  if (fSurfaceCache.has_value() && fSurfaceCacheGeneration == currentGen) {
-    return *fSurfaceCache;
-  }
 
   SurfaceSamplingCache cache;
   for (TopExp_Explorer ex(fShape, TopAbs_FACE); ex.More(); ex.Next()) {
@@ -1175,6 +1177,10 @@ const G4OCCTSolidKernel::SurfaceSamplingCache& G4OCCTSolidKernel::GetOrBuildSurf
     }
   }
 
+  std::unique_lock<std::mutex> lock(fSurfaceCacheMutex);
+  if (fSurfaceCache.has_value() && fSurfaceCacheGeneration == currentGen) {
+    return *fSurfaceCache;
+  }
   fSurfaceCache           = std::move(cache);
   fSurfaceCacheGeneration = currentGen;
   return *fSurfaceCache;
