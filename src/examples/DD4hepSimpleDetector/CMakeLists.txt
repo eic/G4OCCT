@@ -25,9 +25,8 @@ configure_file(compact/Simple_ILD_G4OCCT.xml.in
 
 add_executable(exampleDD4hepSimpleDetector exampleDD4hepSimpleDetector.cc)
 
-target_link_libraries(exampleDD4hepSimpleDetector PRIVATE DD4hep::DDCore
-                                                          G4OCCTDD4hep
-                                                          ${CMAKE_DL_LIBS})
+target_link_libraries(exampleDD4hepSimpleDetector
+                      PRIVATE DD4hep::DDCore G4OCCTDD4hep ${CMAKE_DL_LIBS})
 
 if(TARGET Components_G4OCCTDD4hep)
   add_dependencies(exampleDD4hepSimpleDetector Components_G4OCCTDD4hep)
@@ -57,8 +56,10 @@ if(G4OCCT_DD4HEP_DDSIM_EXECUTABLE)
     COMMAND
       ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --compactFile
       ${G4OCCT_DD4HEP_SIMPLE_COMPACT_PATH} --runType batch --enableGun
-      --gun.particle geantino --gun.energy 1*GeV --numberOfEvents 1 --outputFile
-      ${CMAKE_CURRENT_BINARY_DIR}/ddsim_exampleDD4hepSimpleDetector.edm4hep.root)
+      --gun.particle geantino --gun.energy 1*GeV --numberOfEvents 1
+      --outputFile
+      ${CMAKE_CURRENT_BINARY_DIR}/ddsim_exampleDD4hepSimpleDetector.edm4hep.root
+  )
 else()
   message(STATUS "ddsim not found; skipping ddsim_exampleDD4hepSimpleDetector")
 endif()

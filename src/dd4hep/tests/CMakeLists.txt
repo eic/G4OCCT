@@ -91,17 +91,17 @@ if(G4OCCT_DD4HEP_DDSIM_EXECUTABLE)
   add_test(
     NAME ddsim_step_solid
     COMMAND
-      ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --compactFile ${G4OCCT_STEP_SOLID_COMPACT}
-      --runType batch --enableGun --gun.particle geantino --gun.energy 1*GeV
-      --numberOfEvents 1 --outputFile
+      ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --compactFile
+      ${G4OCCT_STEP_SOLID_COMPACT} --runType batch --enableGun --gun.particle
+      geantino --gun.energy 1*GeV --numberOfEvents 1 --outputFile
       ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_solid.edm4hep.root)
   add_test(
     NAME ddsim_step_assembly
     COMMAND
       ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --compactFile
-      ${G4OCCT_STEP_ASSEMBLY_COMPACT} --runType batch --enableGun --gun.particle
-      geantino --gun.energy 1*GeV --numberOfEvents 1 --outputFile
-      ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_assembly.edm4hep.root)
+      ${G4OCCT_STEP_ASSEMBLY_COMPACT} --runType batch --enableGun
+      --gun.particle geantino --gun.energy 1*GeV --numberOfEvents 1
+      --outputFile ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_assembly.edm4hep.root)
 else()
   message(STATUS "ddsim not found; skipping ddsim_step_* DD4hep plugin tests")
 endif()

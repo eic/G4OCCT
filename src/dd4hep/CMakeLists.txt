@@ -43,9 +43,8 @@ if(USE_ASAN
   if(USE_TSAN)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       execute_process(
-        COMMAND
-          ${CMAKE_CXX_COMPILER}
-          -print-file-name=libclang_rt.tsan-${CMAKE_SYSTEM_PROCESSOR}.so
+        COMMAND ${CMAKE_CXX_COMPILER}
+                -print-file-name=libclang_rt.tsan-${CMAKE_SYSTEM_PROCESSOR}.so
         OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_tsan
         OUTPUT_STRIP_TRAILING_WHITESPACE)
     else()
@@ -93,18 +92,19 @@ if(USE_ASAN
     )
 
     set(rootmapfile
-        "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_MODULE_PREFIX}${library}.components")
+        "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_MODULE_PREFIX}${library}.components"
+    )
 
     string(JOIN ":" ld_preload_value ${_g4occt_preload_sanitizer_lib})
     unset(extra_env)
     if(ld_preload_value)
-      list(APPEND extra_env
-          "LD_PRELOAD=${ld_preload_value}"
-          "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
-          "LSAN_OPTIONS=detect_leaks=0")
+      list(APPEND extra_env "LD_PRELOAD=${ld_preload_value}"
+           "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
+           "LSAN_OPTIONS=detect_leaks=0")
     endif()
 
-    if(DEFINED DD4HEP_ROOT_LIBRARY_PATH AND NOT DD4HEP_ROOT_LIBRARY_PATH STREQUAL "")
+    if(DEFINED DD4HEP_ROOT_LIBRARY_PATH AND NOT DD4HEP_ROOT_LIBRARY_PATH
+                                            STREQUAL "")
       list(APPEND extra_env "ROOT_LIBRARY_PATH=${DD4HEP_ROOT_LIBRARY_PATH}")
     endif()
 
@@ -124,7 +124,10 @@ if(USE_ASAN
       Components_${library} ALL
       COMMENT "Building ${rootmapfile}"
       DEPENDS ${rootmapfile})
-    install(FILES ${rootmapfile} COMPONENT runtime DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(
+      FILES ${rootmapfile}
+      COMPONENT runtime
+      DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endfunction()
 endif()
 
