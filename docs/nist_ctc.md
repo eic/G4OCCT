@@ -88,8 +88,8 @@ and checks that the imported geometry and bounding box are consistent.
 | `nist-ctc-11` | ✅ | AP203 simplified test case 11 |
 
 All 11 parts pass `test_nist_ctc_inside_volume` on every CI run.  The
-sanitizer job (`USE_ASAN=ON`, `USE_UBSAN=ON`) also fetches and exercises these
-fixtures to catch memory errors in the STEP import path.
+sanitizer matrix jobs (`USE_ASAN=ON` and `USE_UBSAN=ON`) also fetch and
+exercise these fixtures to catch memory errors in the STEP import path.
 
 ---
 

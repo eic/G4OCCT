@@ -742,9 +742,12 @@ jobs:
       fail-fast: false
       matrix:
         sanitizer:
-          - label: ASAN+UBSAN
+          - label: ASAN
             name: asan
-            cmake_flags: -DUSE_ASAN=ON -DUSE_UBSAN=ON
+            cmake_flags: -DUSE_ASAN=ON
+          - label: UBSAN
+            name: ubsan
+            cmake_flags: -DUSE_UBSAN=ON
           - label: TSAN
             name: tsan
             cmake_flags: -DUSE_TSAN=ON

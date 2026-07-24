@@ -280,9 +280,11 @@ Do not lower these version floors without an explicit project decision.
 - **CI job (`ci.yml`):** Three main jobs:
   1. `build-test-benchmark` — builds with `-DCMAKE_BUILD_TYPE=Release
      -DBUILD_TESTING=ON -DBUILD_BENCHMARKS=ON`, runs tests, and installs.
-  2. `sanitizer` (matrix) — two entries running inside `eic_xl:nightly`:
+  2. `sanitizer` (matrix) — three entries running inside `eic_xl:nightly`:
      - `asan`: builds with `-DCMAKE_BUILD_TYPE=RelWithDebInfo
-       -DBUILD_TESTING=ON -DUSE_ASAN=ON -DUSE_UBSAN=ON`, runs tests and B1.
+       -DBUILD_TESTING=ON -DUSE_ASAN=ON`, runs tests and B1.
+     - `ubsan`: builds with `-DCMAKE_BUILD_TYPE=RelWithDebInfo
+       -DBUILD_TESTING=ON -DUSE_UBSAN=ON`, runs tests and B1.
      - `tsan`: builds with `-DCMAKE_BUILD_TYPE=RelWithDebInfo
        -DBUILD_TESTING=ON -DUSE_TSAN=ON`, runs tests and B1.
   All jobs check out the repository, install CVMFS, and run inside
