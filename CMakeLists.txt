@@ -237,13 +237,6 @@ if(BUILD_BENCHMARKS)
   add_subdirectory(src/benchmarks)
 endif()
 
-# ─── Examples ─────────────────────────────────────────────────────────────────
-
-option(BUILD_EXAMPLES "Build G4OCCT usage examples" OFF)
-if(BUILD_EXAMPLES)
-  add_subdirectory(src/examples)
-endif()
-
 # ─── DD4hep plugin ────────────────────────────────────────────────────────────
 
 option(BUILD_DD4HEP_PLUGIN
@@ -257,6 +250,13 @@ if(BUILD_DD4HEP_PLUGIN)
   else()
     add_subdirectory(src/dd4hep)
   endif()
+endif()
+
+# ─── Examples ─────────────────────────────────────────────────────────────────
+
+option(BUILD_EXAMPLES "Build G4OCCT usage examples" OFF)
+if(BUILD_EXAMPLES)
+  add_subdirectory(src/examples)
 endif()
 
 # ─── App ──────────────────────────────────────────────────────────────────────

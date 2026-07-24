@@ -38,11 +38,11 @@ Every new file must begin with:
 
 ### CI
 
-- Two jobs: `build-test-benchmark` (Release + benchmarks) and `sanitizer` (RelWithDebInfo + ASAN + UBSAN).
+- Two jobs: `build-test-benchmark` (Release + benchmarks) and `sanitizer` (RelWithDebInfo matrix for ASAN, UBSAN, and TSAN).
 - Prerequisite: `cvmfs-contrib/github-action-cvmfs@v5` before `eic/run-cvmfs-osg-eic-shell@v1`.
 - Platform: `eic_xl:nightly`.
 - `build-test-benchmark`: build with `-DBUILD_TESTING=ON -DBUILD_BENCHMARKS=ON`, run tests, install.
-- `sanitizer`: build with `-DBUILD_TESTING=ON -DUSE_ASAN=ON -DUSE_UBSAN=ON`, run tests.
+- `sanitizer`: matrix entries build with `-DBUILD_TESTING=ON` plus exactly one of `-DUSE_ASAN=ON`, `-DUSE_UBSAN=ON`, or `-DUSE_TSAN=ON`, then run tests.
 - Sanitizer runtime options (`ASAN_OPTIONS`, `LSAN_OPTIONS`, `UBSAN_OPTIONS`) are scoped to the `sanitizer` job.
 - Suppression files live in `.github/asan.supp`, `.github/lsan.supp`, `.github/ubsan.supp`.
 - `ci.yml` `pull_request` trigger has no branch filter — CI runs for PRs targeting any branch (supports sub-PR workflows).

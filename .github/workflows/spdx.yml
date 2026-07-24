@@ -25,4 +25,5 @@ jobs:
           ignore-paths: |-
             src/examples/B1
             src/examples/B4c
+            src/examples/DD4hepSimpleDetector
             src/tests/geometry/geant4_private
