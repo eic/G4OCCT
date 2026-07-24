@@ -24,7 +24,7 @@ macro(g4occt_gtest _target)
   target_include_directories(${_target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_link_libraries(${_target} PRIVATE ${_arg_LINK_LIBRARIES}
                                            G4OCCTTestSupport GTest::gtest_main)
-  gtest_discover_tests(${_target})
+  gtest_discover_tests(${_target} DISCOVERY_TIMEOUT 60)
 endmacro()
 
 # ─── test_solid ───────────────────────────────────────────────────────────────
