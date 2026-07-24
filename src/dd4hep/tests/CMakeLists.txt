@@ -64,7 +64,7 @@ target_include_directories(test_dd4hep_plugins
 
 target_link_libraries(
   test_dd4hep_plugins PRIVATE G4OCCT::G4OCCT G4OCCTDD4hep DD4hep::DDCore
-                              GTest::gtest_main)
+                              GTest::gtest_main ${CMAKE_DL_LIBS})
 
 if(TARGET Components_G4OCCTDD4hep)
   add_dependencies(test_dd4hep_plugins Components_G4OCCTDD4hep)
@@ -86,18 +86,25 @@ add_test(NAME dd4hep_step_solid COMMAND $<TARGET_FILE:test_dd4hep_plugins>
                                         --gtest_filter=STEPSolidTest.*)
 add_test(NAME dd4hep_step_assembly COMMAND $<TARGET_FILE:test_dd4hep_plugins>
                                            --gtest_filter=STEPAssemblyTest.*)
-add_test(
-  NAME ddsim_step_solid
-  COMMAND
-    ddsim --compactFile ${G4OCCT_STEP_SOLID_COMPACT} --runType batch
-    --enableGun --gun.particle geantino --gun.energy 1*GeV --numberOfEvents 1
-    --outputFile ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_solid.edm4hep.root)
-add_test(
-  NAME ddsim_step_assembly
-  COMMAND
-    ddsim --compactFile ${G4OCCT_STEP_ASSEMBLY_COMPACT} --runType batch
-    --enableGun --gun.particle geantino --gun.energy 1*GeV --numberOfEvents 1
-    --outputFile ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_assembly.edm4hep.root)
+find_program(G4OCCT_DD4HEP_DDSIM_EXECUTABLE NAMES ddsim)
+if(G4OCCT_DD4HEP_DDSIM_EXECUTABLE)
+  add_test(
+    NAME ddsim_step_solid
+    COMMAND
+      ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --compactFile ${G4OCCT_STEP_SOLID_COMPACT}
+      --runType batch --enableGun --gun.particle geantino --gun.energy 1*GeV
+      --numberOfEvents 1 --outputFile
+      ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_solid.edm4hep.root)
+  add_test(
+    NAME ddsim_step_assembly
+    COMMAND
+      ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --compactFile
+      ${G4OCCT_STEP_ASSEMBLY_COMPACT} --runType batch --enableGun --gun.particle
+      geantino --gun.energy 1*GeV --numberOfEvents 1 --outputFile
+      ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_assembly.edm4hep.root)
+else()
+  message(STATUS "ddsim not found; skipping ddsim_step_* DD4hep plugin tests")
+endif()
 
 set_tests_properties(
   dd4hep_step_solid dd4hep_step_assembly
@@ -109,13 +116,15 @@ set_tests_properties(
              "dd4hep"
              TIMEOUT
              120)
-set_tests_properties(
-  ddsim_step_solid ddsim_step_assembly
-  PROPERTIES WORKING_DIRECTORY
-             "${CMAKE_CURRENT_BINARY_DIR}"
-             ENVIRONMENT
-             "${_dd4hep_plugin_env}"
-             LABELS
-             "dd4hep;ddsim"
-             TIMEOUT
-             120)
+if(G4OCCT_DD4HEP_DDSIM_EXECUTABLE)
+  set_tests_properties(
+    ddsim_step_solid ddsim_step_assembly
+    PROPERTIES WORKING_DIRECTORY
+               "${CMAKE_CURRENT_BINARY_DIR}"
+               ENVIRONMENT
+               "${_dd4hep_plugin_env}"
+               LABELS
+               "dd4hep;ddsim"
+               TIMEOUT
+               120)
+endif()

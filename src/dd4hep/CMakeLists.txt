@@ -41,10 +41,19 @@ if(USE_ASAN
   endif()
 
   if(USE_TSAN)
-    execute_process(
-      COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libtsan.so
-      OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_tsan
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      execute_process(
+        COMMAND
+          ${CMAKE_CXX_COMPILER}
+          -print-file-name=libclang_rt.tsan-${CMAKE_SYSTEM_PROCESSOR}.so
+        OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_tsan
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    else()
+      execute_process(
+        COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libtsan.so
+        OUTPUT_VARIABLE _g4occt_preload_sanitizer_lib_tsan
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
     if(EXISTS "${_g4occt_preload_sanitizer_lib_tsan}")
       list(APPEND _g4occt_preload_sanitizer_lib
            "${_g4occt_preload_sanitizer_lib_tsan}")
@@ -83,14 +92,20 @@ if(USE_ASAN
         $<TARGET_FILE_DIR:${library}>:$<TARGET_FILE_DIR:DD4hep::DD4hepGaudiPluginMgr>:$ENV{${runtime_library_env_name}}
     )
 
-    set(rootmapfile ${CMAKE_SHARED_MODULE_PREFIX}${library}.components)
+    set(rootmapfile
+        "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_MODULE_PREFIX}${library}.components")
 
     string(JOIN ":" ld_preload_value ${_g4occt_preload_sanitizer_lib})
+    unset(extra_env)
     if(ld_preload_value)
-      set(extra_env
+      list(APPEND extra_env
           "LD_PRELOAD=${ld_preload_value}"
           "ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0"
           "LSAN_OPTIONS=detect_leaks=0")
+    endif()
+
+    if(DEFINED DD4HEP_ROOT_LIBRARY_PATH AND NOT DD4HEP_ROOT_LIBRARY_PATH STREQUAL "")
+      list(APPEND extra_env "ROOT_LIBRARY_PATH=${DD4HEP_ROOT_LIBRARY_PATH}")
     endif()
 
     add_custom_command(
@@ -99,21 +114,17 @@ if(USE_ASAN
       COMMAND
         ${CMAKE_COMMAND} -E env
         "${runtime_library_env_name}=${runtime_library_path}" ${extra_env}
-        "ROOT_LIBRARY_PATH=${DD4HEP_ROOT_LIBRARY_PATH}"
-        $<TARGET_FILE:DD4hep::listcomponents> -o ${rootmapfile}
+        $<TARGET_FILE:DD4hep::listcomponents> -o "${rootmapfile}"
         $<TARGET_FILE_NAME:${library}>
       COMMENT "Generating ${rootmapfile}"
-      WORKING_DIRECTORY ${LIBRARY_OUTPUT_PATH}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMAND_EXPAND_LISTS)
 
     add_custom_target(
       Components_${library} ALL
       COMMENT "Building ${rootmapfile}"
       DEPENDS ${rootmapfile})
-    install(
-      FILES $<TARGET_FILE_DIR:${library}>/${rootmapfile}
-      COMPONENT runtime
-      DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(FILES ${rootmapfile} COMPONENT runtime DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endfunction()
 endif()
 
