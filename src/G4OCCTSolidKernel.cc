@@ -54,8 +54,6 @@
 
 namespace {
 
-constexpr Standard_Real kRelativeDeflection = 0.01;
-
 class PointToMeshDistance
     : public BVH_Distance<Standard_Real, 3, BVH_Vec3d, BRepExtrema_TriangleSet> {
 public:
@@ -165,7 +163,7 @@ public:
       return Standard_False;
     }
     ++myCrossings;
-    constexpr Standard_Real kEdgeTol = 1e-6;
+      constexpr Standard_Real kEdgeTol = 1e-6;
     if (u < kEdgeTol || v < kEdgeTol || (1.0 - u - v) < kEdgeTol) {
       myDegenerate = Standard_True;
     }
@@ -387,6 +385,10 @@ void G4OCCTSolidKernel::SetShape(const TopoDS_Shape& shape) {
   {
     std::unique_lock<std::mutex> lock(fSurfaceCacheMutex);
     fSurfaceCache.reset();
+    fSurfaceCacheGeneration = std::numeric_limits<std::uint64_t>::max();
+    fSurfaceCacheBuilding   = false;
+    lock.unlock();
+    fSurfaceCacheCV.notify_all();
   }
   fShapeGeneration.fetch_add(1, std::memory_order_release);
 }
@@ -482,12 +484,12 @@ void G4OCCTSolidKernel::ComputeBounds() {
     }
   }
 
-  fBVHDeflection  = kRelativeDeflection * maxFaceDiag;
+  fBVHDeflection  = kOCCTRelativeDeflection * maxFaceDiag;
   fAllFacesPlanar = std::all_of(fFaceBoundsCache.begin(), fFaceBoundsCache.end(),
                                 [](const FaceBounds& fb) { return fb.plane.has_value(); });
 
   {
-    [[maybe_unused]] const BRepMesh_IncrementalMesh mesher(fShape, kRelativeDeflection,
+    [[maybe_unused]] const BRepMesh_IncrementalMesh mesher(fShape, kOCCTRelativeDeflection,
                                                            /*isRelative=*/Standard_True);
   }
 
@@ -509,7 +511,7 @@ void G4OCCTSolidKernel::ComputeBounds() {
         Standard_Real fx1 = 0.0, fy1 = 0.0, fz1 = 0.0;
         fb.box.Get(fx0, fy0, fz0, fx1, fy1, fz1);
         const G4double faceDiag = G4ThreeVector(fx1 - fx0, fy1 - fy0, fz1 - fz0).mag();
-        deflection              = kRelativeDeflection * faceDiag;
+        deflection              = kOCCTRelativeDeflection * faceDiag;
       }
       fFaceDeflections.push_back(deflection);
     }
@@ -1139,7 +1141,7 @@ const G4OCCTSolidKernel::SurfaceSamplingCache& G4OCCTSolidKernel::GetOrBuildSurf
 
   SurfaceSamplingCache cache;
   try {
-    BRepMesh_IncrementalMesh mesher(fShape, kRelativeDeflection, /*isRelative=*/Standard_True);
+    BRepMesh_IncrementalMesh mesher(fShape, kOCCTRelativeDeflection, /*isRelative=*/Standard_True);
     (void)mesher;
 
     for (TopExp_Explorer ex(fShape, TopAbs_FACE); ex.More(); ex.Next()) {
@@ -1200,13 +1202,16 @@ const G4OCCTSolidKernel::SurfaceSamplingCache& G4OCCTSolidKernel::GetOrBuildSurf
   return *fSurfaceCache;
 }
 
-G4ThreeVector G4OCCTSolidKernel::GetPointOnSurface() const {
+G4ThreeVector G4OCCTSolidKernel::GetPointOnSurface(const char* diagnosticName) const {
   const SurfaceSamplingCache& cache = GetOrBuildSurfaceCache();
 
   if (cache.triangles.empty() || cache.totalArea == 0.0) {
     G4ExceptionDescription msg;
-    msg << "Tessellation of the OCCT shape produced no valid triangles; cannot sample a point on "
-           "the surface.";
+    msg << "Tessellation of the OCCT shape";
+    if (diagnosticName != nullptr) {
+      msg << " for solid \"" << diagnosticName << "\"";
+    }
+    msg << " produced no valid triangles; cannot sample a point on the surface.";
     G4Exception("G4OCCTSolidKernel::GetPointOnSurface", "GeomMgt1001", FatalException, msg);
     return {0.0, 0.0, 0.0};
   }

@@ -32,6 +32,8 @@
 
 namespace g4occt::detail {
 
+inline constexpr Standard_Real kOCCTRelativeDeflection = 0.01;
+
 class G4OCCTSolidKernel {
 public:
   static G4double Infinity() { return ::kInfinity; }
@@ -101,7 +103,7 @@ public:
   G4double ExactDistanceToOut(const G4ThreeVector& p) const;
   G4double GetCubicVolume();
   G4double GetSurfaceArea();
-  G4ThreeVector GetPointOnSurface() const;
+  G4ThreeVector GetPointOnSurface(const char* diagnosticName = nullptr) const;
   const SurfaceSamplingCache& GetOrBuildSurfaceCache() const;
 
 private:

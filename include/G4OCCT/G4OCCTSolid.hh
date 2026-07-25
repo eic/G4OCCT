@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 
+class G4Polyhedron;
 class TopoDS_Shape;
 class G4VGraphicsScene;
 
@@ -36,10 +37,17 @@ public:
    * @throws std::invalid_argument if @p shape is null or has no computable bounding box.
    */
   G4OCCTSolid(const G4String& name, const TopoDS_Shape& shape);
+
+  /**
+   * Destroy the solid and release its adapter-owned caches.
+   */
   ~G4OCCTSolid() override;
 
   /**
    * Load a STEP file and construct a G4OCCTSolid from the first shape found.
+   *
+   * Convenience factory that combines STEP file reading with solid
+   * construction.
    *
    * @param name Name registered with the Geant4 solid store.
    * @param path Filesystem path to the STEP file.
@@ -49,62 +57,138 @@ public:
    */
   static G4OCCTSolid* FromSTEP(const G4String& name, const std::string& path);
 
-  /// Return kInside, kSurface, or kOutside for point @p p.
+  /**
+   * Return kInside, kSurface, or kOutside for point @p p.
+   */
   EInside Inside(const G4ThreeVector& p) const override;
 
-  /// Return the outward unit normal at surface point @p p.
+  /**
+   * Return the outward unit normal at surface point @p p.
+   *
+   * Behaviour is defined for points on the surface, following the Geant4
+   * `G4VSolid` contract.
+   */
   G4ThreeVector SurfaceNormal(const G4ThreeVector& p) const override;
 
-  /// Distance from external point @p p along direction @p v to the surface.
+  /**
+   * Distance from external point @p p along direction @p v to the surface.
+   *
+   * @param p Point outside (or on) the solid surface.
+   * @param v Non-zero direction vector, as required by the `G4VSolid`
+   * contract.
+   * @return Distance to the first surface intersection, or `kInfinity` if the
+   * ray does not intersect the solid.
+   */
   G4double DistanceToIn(const G4ThreeVector& p, const G4ThreeVector& v) const override;
 
-  /// Lower bound on the shortest distance from external point @p p to the surface.
+  /**
+   * Lower bound on the shortest distance from external point @p p to the
+   * surface.
+   *
+   * Use `ExactDistanceToIn()` when the exact shortest distance is required.
+   */
   G4double DistanceToIn(const G4ThreeVector& p) const override;
 
-  /// Distance from internal point @p p along direction @p v to the surface.
+  /**
+   * Distance from internal point @p p along direction @p v to the surface.
+   *
+   * @param p Point inside (or on) the solid surface.
+   * @param v Non-zero direction vector, as required by the `G4VSolid`
+   * contract.
+   * @param calcNorm When true, also request the exit normal information.
+   * @param validNorm Optional output flag reporting whether @p n contains a
+   * valid normal.
+   * @param n Optional output for the exit normal.
+   * @return Distance to the first exit intersection along @p v.
+   */
   G4double DistanceToOut(const G4ThreeVector& p, const G4ThreeVector& v,
                          const G4bool calcNorm = false, G4bool* validNorm = nullptr,
                          G4ThreeVector* n = nullptr) const override;
 
-  /// Lower bound on the shortest distance from internal point @p p to the surface.
+  /**
+   * Lower bound on the shortest distance from internal point @p p to the
+   * surface.
+   *
+   * Use `ExactDistanceToOut()` when the exact shortest distance is required.
+   */
   G4double DistanceToOut(const G4ThreeVector& p) const override;
 
-  /// Return a point sampled on the solid surface.
+  /**
+   * Return a point sampled on the solid surface.
+   *
+   * Sampling is performed from the cached OCCT tessellation used by the shared
+   * kernel and projected back to the analytical face where possible.
+   */
   G4ThreeVector GetPointOnSurface() const override;
 
-  /// Exact shortest distance from external point @p p to the surface.
+  /**
+   * Exact shortest distance from external point @p p to the surface.
+   *
+   * @return Zero when @p p is on or inside the surface.
+   */
   G4double ExactDistanceToIn(const G4ThreeVector& p) const;
 
-  /// Exact shortest distance from internal point @p p to the surface.
+  /**
+   * Exact shortest distance from internal point @p p to the surface.
+   *
+   * @return Zero when @p p is within the surface tolerance of the boundary.
+   */
   G4double ExactDistanceToOut(const G4ThreeVector& p) const;
 
-  /// Compute and return the cubic volume of the solid.
+  /**
+   * Compute and return the cubic volume of the solid.
+   *
+   * The shared kernel caches the result after the first evaluation for the
+   * current shape generation.
+   */
   G4double GetCubicVolume() override;
 
-  /// Compute and return the surface area of the solid.
+  /**
+   * Compute and return the surface area of the solid.
+   *
+   * The shared kernel caches the result after the first evaluation for the
+   * current shape generation.
+   */
   G4double GetSurfaceArea() override;
 
-  /// Return a string identifying the entity type.
+  /**
+   * Return a string identifying the entity type.
+   */
   G4GeometryType GetEntityType() const override;
 
-  /// Return the axis-aligned bounding-box extent.
+  /**
+   * Return the axis-aligned bounding-box extent.
+   */
   G4VisExtent GetExtent() const override;
 
-  /// Return axis-aligned bounding-box limits.
+  /**
+   * Return axis-aligned bounding-box limits.
+   */
   void BoundingLimits(G4ThreeVector& pMin, G4ThreeVector& pMax) const override;
 
-  /// Calculate the solid extent along axis @p pAxis under @p pTransform and @p pVoxelLimit.
+  /**
+   * Calculate the solid extent along axis @p pAxis under @p pTransform and
+   * @p pVoxelLimit.
+   */
   G4bool CalculateExtent(const EAxis pAxis, const G4VoxelLimits& pVoxelLimit,
                          const G4AffineTransform& pTransform, G4double& pMin,
                          G4double& pMax) const override;
 
-  /// Describe the solid to the graphics scene.
+  /**
+   * Describe the solid to the graphics scene.
+   */
   void DescribeYourselfTo(G4VGraphicsScene& scene) const override;
 
-  /// Create a polyhedron representation for visualisation.
+  /**
+   * Create a polyhedron representation for visualisation.
+   *
+   * The adapter caches the generated polyhedron per shape generation.
+   */
   G4Polyhedron* CreatePolyhedron() const override;
 
-  /// Stream a human-readable description.
+  /**
+   * Stream a human-readable description of the solid.
+   */
   std::ostream& StreamInfo(std::ostream& os) const override;
 
   /**
