@@ -16,6 +16,18 @@
 #include <cmath>
 #include <stdexcept>
 
+namespace {
+
+double ClampDistanceToStep(const double dist, const double step, const double infinityCm) {
+  const double boundedStep = std::max(0.0, std::min(step, TGeoShape::Big()));
+  if (std::isinf(dist) || dist >= 0.5 * infinityCm) {
+    return boundedStep;
+  }
+  return std::min(dist, boundedStep);
+}
+
+} // namespace
+
 TGeoOCCTSolid::TGeoOCCTSolid() = default;
 
 TGeoOCCTSolid::TGeoOCCTSolid(const char* name, const TopoDS_Shape& shape)
@@ -76,25 +88,21 @@ Int_t TGeoOCCTSolid::DistancetoPrimitive(Int_t px, Int_t py) {
 }
 
 Double_t TGeoOCCTSolid::DistFromInside(const Double_t* point, const Double_t* dir, Int_t /*iact*/,
-                                       Double_t /*step*/, Double_t* safe) const {
+                                       Double_t step, Double_t* safe) const {
   if (!fBridge) {
-    return TGeoShape::Big();
+    return std::max(0.0, std::min(step, TGeoShape::Big()));
   }
   const double dist = fBridge->DistFromInsideCm(point, dir, safe);
-  return (std::isinf(dist) || dist >= 0.5 * g4occt::detail::TGeoOCCTSolidBridge::InfinityCm())
-             ? TGeoShape::Big()
-             : std::min(dist, TGeoShape::Big());
+  return ClampDistanceToStep(dist, step, g4occt::detail::TGeoOCCTSolidBridge::InfinityCm());
 }
 
 Double_t TGeoOCCTSolid::DistFromOutside(const Double_t* point, const Double_t* dir, Int_t /*iact*/,
-                                        Double_t /*step*/, Double_t* safe) const {
+                                        Double_t step, Double_t* safe) const {
   if (!fBridge) {
-    return TGeoShape::Big();
+    return std::max(0.0, std::min(step, TGeoShape::Big()));
   }
   const double dist = fBridge->DistFromOutsideCm(point, dir, safe);
-  return (std::isinf(dist) || dist >= 0.5 * g4occt::detail::TGeoOCCTSolidBridge::InfinityCm())
-             ? TGeoShape::Big()
-             : std::min(dist, TGeoShape::Big());
+  return ClampDistanceToStep(dist, step, g4occt::detail::TGeoOCCTSolidBridge::InfinityCm());
 }
 
 TGeoVolume* TGeoOCCTSolid::Divide(TGeoVolume* /*voldiv*/, const char* /*divname*/, Int_t /*iaxis*/,

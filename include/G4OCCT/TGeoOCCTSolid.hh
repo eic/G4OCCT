@@ -7,6 +7,10 @@
 #ifndef G4OCCT_TGeoOCCTSolid_hh
 #define G4OCCT_TGeoOCCTSolid_hh
 
+#ifndef G4OCCT_WITH_ROOT_TGEO_SUPPORT
+#error "G4OCCT/TGeoOCCTSolid.hh requires BUILD_ROOT_TGEO_SUPPORT=ON when G4OCCT is built."
+#endif
+
 #include <TGeoShape.h>
 
 #include <memory>

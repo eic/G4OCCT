@@ -48,6 +48,18 @@ TEST(TGeoOCCTSolid, DistancesUseCmUnits) {
   EXPECT_NEAR(solid->DistFromInside(inside, out_x), 1.0, 1e-9);
 }
 
+TEST(TGeoOCCTSolid, DistancesRespectStepCap) {
+  auto solid                = LoadBox();
+  const Double_t outside[3] = {2.0, 0.0, 0.0};
+  const Double_t inside[3]  = {0.0, 0.0, 0.0};
+  const Double_t to_box[3]  = {-1.0, 0.0, 0.0};
+  const Double_t away[3]    = {1.0, 0.0, 0.0};
+
+  EXPECT_NEAR(solid->DistFromOutside(outside, to_box, 1, 0.25), 0.25, 1e-12);
+  EXPECT_NEAR(solid->DistFromInside(inside, away, 1, 0.25), 0.25, 1e-12);
+  EXPECT_NEAR(solid->DistFromOutside(outside, away, 1, 0.25), 0.25, 1e-12);
+}
+
 TEST(TGeoOCCTSolid, RayMissReturnsTGeoBig) {
   auto solid                = LoadBox();
   const Double_t outside[3] = {2.0, 0.0, 0.0};

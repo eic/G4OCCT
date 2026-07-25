@@ -44,17 +44,46 @@ namespace {
     G4OCCTSolidKernel::SphereCacheData sphere;
   };
 
+  struct ThreadCacheEntry {
+    std::weak_ptr<const void> lifetime;
+    std::unique_ptr<ThreadCaches> caches;
+  };
+
 } // namespace
 
 class TGeoOCCTSolidBridge::Impl {
 public:
-  explicit Impl(const TopoDS_Shape& shape) : cacheKey(NextCacheKey()), kernel(shape) {}
+  explicit Impl(const TopoDS_Shape& shape)
+      : cacheKey(NextCacheKey())
+      , cacheLifetime(std::make_shared<const std::uint8_t>(0))
+      , kernel(shape) {}
   ~Impl() { ThreadLocalCaches().erase(cacheKey); }
 
-  ThreadCaches& CachesForThisThread() const { return ThreadLocalCaches()[cacheKey]; }
+  ThreadCaches& CachesForThisThread() const {
+    auto& caches = ThreadLocalCaches();
+    for (auto it = caches.begin(); it != caches.end();) {
+      if (it->second.lifetime.expired()) {
+        it = caches.erase(it);
+      } else {
+        ++it;
+      }
+    }
 
-  static std::unordered_map<std::uint64_t, ThreadCaches>& ThreadLocalCaches() {
-    static thread_local std::unordered_map<std::uint64_t, ThreadCaches> caches;
+    auto [it, inserted] =
+        caches.try_emplace(cacheKey, ThreadCacheEntry{std::weak_ptr<const void>{cacheLifetime},
+                                                      std::make_unique<ThreadCaches>()});
+    if (!inserted && it->second.lifetime.expired()) {
+      caches.erase(it);
+      it = caches
+               .emplace(cacheKey, ThreadCacheEntry{std::weak_ptr<const void>{cacheLifetime},
+                                                   std::make_unique<ThreadCaches>()})
+               .first;
+    }
+    return *it->second.caches;
+  }
+
+  static std::unordered_map<std::uint64_t, ThreadCacheEntry>& ThreadLocalCaches() {
+    static thread_local std::unordered_map<std::uint64_t, ThreadCacheEntry> caches;
     return caches;
   }
 
@@ -64,6 +93,7 @@ public:
   }
 
   const std::uint64_t cacheKey;
+  std::shared_ptr<const void> cacheLifetime;
   G4OCCTSolidKernel kernel;
 };
 
