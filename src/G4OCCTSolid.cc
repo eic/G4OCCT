@@ -105,9 +105,9 @@ G4OCCTSolid* G4OCCTSolid::FromSTEP(const G4String& name, const std::string& path
 }
 
 EInside G4OCCTSolid::Inside(const G4ThreeVector& p) const {
-  return ToG4Inside(fImpl->kernel.ClassifyPoint(
-      p, *fImpl->classifierCache.Instance(), *fImpl->intersectorCache.Instance(),
-      *fImpl->sphereCache.Instance()));
+  return ToG4Inside(fImpl->kernel.ClassifyPoint(p, *fImpl->classifierCache.Instance(),
+                                                *fImpl->intersectorCache.Instance(),
+                                                *fImpl->sphereCache.Instance()));
 }
 
 G4ThreeVector G4OCCTSolid::SurfaceNormal(const G4ThreeVector& p) const {
@@ -125,8 +125,8 @@ G4double G4OCCTSolid::DistanceToIn(const G4ThreeVector& p) const {
 G4double G4OCCTSolid::DistanceToOut(const G4ThreeVector& p, const G4ThreeVector& v,
                                     const G4bool calcNorm, G4bool* validNorm,
                                     G4ThreeVector* n) const {
-  return fImpl->kernel.DistanceToOut(p, v, *fImpl->intersectorCache.Instance(), calcNorm,
-                                     validNorm, n);
+  return fImpl->kernel.DistanceToOut(p, v, *fImpl->intersectorCache.Instance(), calcNorm, validNorm,
+                                     n);
 }
 
 G4double G4OCCTSolid::DistanceToOut(const G4ThreeVector& p) const {
