@@ -56,7 +56,7 @@ The shared kernel is responsible for:
 `G4OCCTSolid` remains responsible for:
 
 - translating between the `G4VSolid` API and the shared kernel
-- owning `G4Cache` thread-local wrappers for the classifier/intersector/sphere
+- owning Geant4 thread-local wrappers for the classifier/intersector/sphere
   contexts used by the Geant4 workflow
 - Geant4-specific visualization plumbing such as `CreatePolyhedron()`
 

@@ -23,10 +23,10 @@
 
 #include <G4AffineTransform.hh>
 #include <G4BoundingEnvelope.hh>
-#include <G4Cache.hh>
 #include <G4Exception.hh>
 #include <G4Polyhedron.hh>
 #include <G4TessellatedSolid.hh>
+#include <G4ThreadLocalSingleton.hh>
 #include <G4TriangularFacet.hh>
 #include <G4VGraphicsScene.hh>
 #include <G4VisExtent.hh>
@@ -46,9 +46,9 @@ public:
   explicit Impl(const TopoDS_Shape& shape) : kernel(shape) {}
 
   G4OCCTSolidKernel kernel;
-  mutable G4Cache<G4OCCTSolidKernel::ClassifierCache> classifierCache;
-  mutable G4Cache<G4OCCTSolidKernel::IntersectorCache> intersectorCache;
-  mutable G4Cache<G4OCCTSolidKernel::SphereCacheData> sphereCache;
+  mutable G4ThreadLocalSingleton<G4OCCTSolidKernel::ClassifierCache> classifierCache;
+  mutable G4ThreadLocalSingleton<G4OCCTSolidKernel::IntersectorCache> intersectorCache;
+  mutable G4ThreadLocalSingleton<G4OCCTSolidKernel::SphereCacheData> sphereCache;
 
   mutable std::unique_ptr<G4Polyhedron> cachedPolyhedron;
   mutable std::uint64_t polyhedronGeneration{std::numeric_limits<std::uint64_t>::max()};
@@ -76,11 +76,7 @@ EInside ToG4Inside(const G4OCCTSolidKernel::PointClassification classification) 
 G4OCCTSolid::G4OCCTSolid(const G4String& name, const TopoDS_Shape& shape)
     : G4VSolid(name), fImpl(std::make_unique<Impl>(shape)) {}
 
-G4OCCTSolid::~G4OCCTSolid() {
-  fImpl->classifierCache.Get().classifier.reset();
-  fImpl->intersectorCache.Get().faceIntersectors.clear();
-  fImpl->sphereCache.Get().spheres.clear();
-}
+G4OCCTSolid::~G4OCCTSolid() = default;
 
 G4OCCTSolid* G4OCCTSolid::FromSTEP(const G4String& name, const std::string& path) {
   STEPControl_Reader reader;
@@ -110,7 +106,8 @@ G4OCCTSolid* G4OCCTSolid::FromSTEP(const G4String& name, const std::string& path
 
 EInside G4OCCTSolid::Inside(const G4ThreeVector& p) const {
   return ToG4Inside(fImpl->kernel.ClassifyPoint(
-      p, fImpl->classifierCache.Get(), fImpl->intersectorCache.Get(), fImpl->sphereCache.Get()));
+      p, *fImpl->classifierCache.Instance(), *fImpl->intersectorCache.Instance(),
+      *fImpl->sphereCache.Instance()));
 }
 
 G4ThreeVector G4OCCTSolid::SurfaceNormal(const G4ThreeVector& p) const {
@@ -118,21 +115,22 @@ G4ThreeVector G4OCCTSolid::SurfaceNormal(const G4ThreeVector& p) const {
 }
 
 G4double G4OCCTSolid::DistanceToIn(const G4ThreeVector& p, const G4ThreeVector& v) const {
-  return fImpl->kernel.DistanceToIn(p, v, fImpl->intersectorCache.Get());
+  return fImpl->kernel.DistanceToIn(p, v, *fImpl->intersectorCache.Instance());
 }
 
 G4double G4OCCTSolid::DistanceToIn(const G4ThreeVector& p) const {
-  return fImpl->kernel.DistanceToIn(p, fImpl->classifierCache.Get());
+  return fImpl->kernel.DistanceToIn(p, *fImpl->classifierCache.Instance());
 }
 
 G4double G4OCCTSolid::DistanceToOut(const G4ThreeVector& p, const G4ThreeVector& v,
                                     const G4bool calcNorm, G4bool* validNorm,
                                     G4ThreeVector* n) const {
-  return fImpl->kernel.DistanceToOut(p, v, fImpl->intersectorCache.Get(), calcNorm, validNorm, n);
+  return fImpl->kernel.DistanceToOut(p, v, *fImpl->intersectorCache.Instance(), calcNorm,
+                                     validNorm, n);
 }
 
 G4double G4OCCTSolid::DistanceToOut(const G4ThreeVector& p) const {
-  return fImpl->kernel.DistanceToOut(p, fImpl->sphereCache.Get());
+  return fImpl->kernel.DistanceToOut(p, *fImpl->sphereCache.Instance());
 }
 
 G4ThreeVector G4OCCTSolid::GetPointOnSurface() const {
@@ -140,7 +138,7 @@ G4ThreeVector G4OCCTSolid::GetPointOnSurface() const {
 }
 
 G4double G4OCCTSolid::ExactDistanceToIn(const G4ThreeVector& p) const {
-  return fImpl->kernel.ExactDistanceToIn(p, fImpl->classifierCache.Get());
+  return fImpl->kernel.ExactDistanceToIn(p, *fImpl->classifierCache.Instance());
 }
 
 G4double G4OCCTSolid::ExactDistanceToOut(const G4ThreeVector& p) const {

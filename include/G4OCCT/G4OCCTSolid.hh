@@ -201,7 +201,7 @@ public:
    * Replace the underlying OCCT shape.
    *
    * @note Updating the shape bumps the kernel generation so each worker-thread
-   * `G4Cache` entry is rebuilt lazily on the next query. This call is not
+   * thread-local cache entry is rebuilt lazily on the next query. This call is not
    * synchronised with in-flight navigation; do not call it while a simulation
    * run is in progress.
    *
