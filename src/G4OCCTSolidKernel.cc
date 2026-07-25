@@ -384,6 +384,8 @@ void G4OCCTSolidKernel::SetShape(const TopoDS_Shape& shape) {
   }
   {
     std::unique_lock<std::mutex> lock(fSurfaceCacheMutex);
+    // Reset both the cache payload and its bookkeeping together so waiting
+    // threads never observe "no cache" with stale generation/build metadata.
     fSurfaceCache.reset();
     fSurfaceCacheGeneration = std::numeric_limits<std::uint64_t>::max();
     fSurfaceCacheBuilding   = false;
@@ -394,6 +396,8 @@ void G4OCCTSolidKernel::SetShape(const TopoDS_Shape& shape) {
 }
 
 void G4OCCTSolidKernel::ComputeBounds() {
+  // Build missing PCurves for planar faces up front so the later polygon fast
+  // paths can derive stable (u, v) polygons from the OCCT face wiring.
   for (TopExp_Explorer faceEx(fShape, TopAbs_FACE); faceEx.More(); faceEx.Next()) {
     const TopoDS_Face& face = TopoDS::Face(faceEx.Current());
     if (BRepAdaptor_Surface(face).GetType() != GeomAbs_Plane) {
@@ -432,6 +436,9 @@ void G4OCCTSolidKernel::ComputeBounds() {
     std::vector<gp_Pnt2d> uvPolygon;
     std::optional<G4ThreeVector> outwardNormal;
     if (adaptor.GetType() == GeomAbs_Plane) {
+      // For single-wire planar faces we cache a 2D polygon in face coordinates
+      // and the analytical outward normal. That lets Inside/Distance* use a
+      // cheap ray-plane + polygon test instead of the heavier OCCT intersector.
       maybePlane             = adaptor.Plane();
       const gp_Ax3& pos      = maybePlane->Position();
       const TopoDS_Wire wire = BRepTools::OuterWire(currentFace);
@@ -550,6 +557,8 @@ void G4OCCTSolidKernel::ComputeInitialSpheres() {
   BRepClass3d_SolidClassifier localClassifier;
   localClassifier.Load(fShape);
 
+  // Seed the per-thread sphere caches from a small set of AABB-derived sample
+  // points so deep interior queries can often terminate without touching OCCT.
   for (const G4ThreeVector& cand : candidates) {
     localClassifier.Perform(ToPoint(cand), tol);
     if (localClassifier.State() != TopAbs_IN) {
@@ -706,6 +715,9 @@ G4OCCTSolidKernel::ClassifyPoint(const G4ThreeVector& p, ClassifierCache& classi
   }
 
   if (!fTriangleSet.IsNull() && fTriangleSet->Size() > 0) {
+    // Near the tessellated surface we deliberately fall back to the exact OCCT
+    // classifier; the BVH lower bound is only used to prove that we are safely
+    // away from the true analytical boundary by more than the mesh deflection.
     if (fBVHDeflection > 0.0) {
       const G4double bvhLB = BVHLowerBoundDistance(p);
       if (bvhLB < tolerance) {
@@ -730,6 +742,9 @@ G4OCCTSolidKernel::ClassifyPoint(const G4ThreeVector& p, ClassifierCache& classi
                                            : PointClassification::kOutside;
     }
 
+    // Edge/vertex hits can make one parity ray ambiguous, so we cast two
+    // additional orthogonal rays and let non-degenerate rays vote before
+    // paying for the exact classifier fallback.
     int insideVotes  = 0;
     int outsideVotes = 0;
     if (!caster.Degenerate()) {
@@ -783,6 +798,8 @@ G4OCCTSolidKernel::ClassifyPoint(const G4ThreeVector& p, ClassifierCache& classi
     }
     const FaceBounds& fb = fFaceBoundsCache[i];
     if (!fb.uvPolygon.empty()) {
+      // Fast path for single-wire planar faces: intersect the analytical plane
+      // and then test the hit against the cached 2D polygon in face space.
       Standard_Real u_hit = 0.0;
       Standard_Real v_hit = 0.0;
       const auto t        = RayPlaneFaceHit(ray, *fb.plane, fb.uvPolygon, -tolerance,
@@ -871,6 +888,9 @@ G4ThreeVector G4OCCTSolidKernel::SurfaceNormal(const G4ThreeVector& p) const {
   };
 
   const G4double bvhLB        = BVHLowerBoundDistance(p);
+  // The BVH gives a lower bound to the true surface distance. Adding
+  // 2×deflection turns that into a conservative face-search radius that still
+  // prunes obviously distant faces before exact OCCT distance checks.
   const G4double seedDist     = (fBVHDeflection > 0.0 && bvhLB < G4OCCTSolidKernel::Infinity())
                                     ? bvhLB + 2.0 * fBVHDeflection
                                     : G4OCCTSolidKernel::Infinity();
@@ -974,6 +994,9 @@ G4double G4OCCTSolidKernel::BVHLowerBoundDistance(const G4ThreeVector& p) const 
     }
   }
 
+  // The tessellated distance can overestimate how far we are from the
+  // analytical surface by up to the local mesh deflection, so subtract it and
+  // clamp at zero to preserve a conservative lower bound.
   return std::max(0.0, meshDist - deflection);
 }
 
@@ -999,6 +1022,9 @@ G4double G4OCCTSolidKernel::DistanceToIn(const G4ThreeVector& p,
     return aabbDist;
   }
 
+  // Once the point is inside or very near the AABB, the BVH lower bound is the
+  // next cheap filter. Only near-surface cases fall through to the exact OCCT
+  // distance query.
   const G4double bvhDist = BVHLowerBoundDistance(p);
   if (bvhDist < G4OCCTSolidKernel::Infinity() && bvhDist > IntersectionTolerance()) {
     return bvhDist;
@@ -1091,6 +1117,8 @@ G4double G4OCCTSolidKernel::DistanceToOut(const G4ThreeVector& p,
                                           SphereCacheData& sphereCache) const {
   G4double d;
   if (fAllFacesPlanar) {
+    // For all-planar solids the analytical plane distances are already exact
+    // lower bounds, so they avoid BVH traversal entirely.
     d = PlanarFaceLowerBoundDistance(p);
     if (d == G4OCCTSolidKernel::Infinity()) {
       d = ExactDistanceToOut(p);
@@ -1099,6 +1127,8 @@ G4double G4OCCTSolidKernel::DistanceToOut(const G4ThreeVector& p,
     const G4double bvhDist = BVHLowerBoundDistance(p);
     d = (bvhDist < G4OCCTSolidKernel::Infinity()) ? bvhDist : ExactDistanceToOut(p);
   }
+  // Feed the just-computed lower bound back into the adaptive sphere cache so
+  // future interior queries can terminate earlier.
   TryInsertSphere(sphereCache, p, d);
   return d;
 }
@@ -1136,6 +1166,8 @@ const G4OCCTSolidKernel::SurfaceSamplingCache& G4OCCTSolidKernel::GetOrBuildSurf
     if (fSurfaceCache.has_value() && fSurfaceCacheGeneration == currentGen) {
       return *fSurfaceCache;
     }
+    // Claim the build so only one thread pays for meshing/tessellation work on
+    // a cold cache miss; waiters sleep on the condition variable above.
     fSurfaceCacheBuilding = true;
   }
 
@@ -1177,6 +1209,8 @@ const G4OCCTSolidKernel::SurfaceSamplingCache& G4OCCTSolidKernel::GetOrBuildSurf
 
         const G4double area = 0.5 * (v2 - v1).cross(v3 - v1).mag();
         if (area > 0.0) {
+          // Prefix sums let GetPointOnSurface() perform an area-weighted random
+          // triangle selection with one lower_bound on cumulativeAreas.
           cache.totalArea += area;
           cache.cumulativeAreas.push_back(cache.totalArea);
           cache.triangles.push_back({v1, v2, v3, faceIndex});
