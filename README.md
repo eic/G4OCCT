@@ -50,8 +50,11 @@ infrastructure remain unchanged.
 | G4OCCT class | Inherits from | Embeds |
 |---|---|---|
 | `G4OCCTSolid` | `G4VSolid` | `TopoDS_Shape` |
+| `TGeoOCCTSolid`* | `TGeoShape` | `TopoDS_Shape` |
 | `G4OCCTLogicalVolume` | `G4LogicalVolume` | `TopoDS_Shape` (optional) |
 | `G4OCCTPlacement` | `G4PVPlacement` | `TopLoc_Location` |
+
+\* Built when `BUILD_ROOT_TGEO_SUPPORT=ON`.
 
 Navigation queries (`Inside`, `DistanceToIn/Out`, `SurfaceNormal`, …) are
 delegated to OCCT BRep algorithms.  See the
@@ -79,6 +82,7 @@ cmake -S . -B build \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_TESTING=ON \
   -DBUILD_BENCHMARKS=ON \
+  -DBUILD_ROOT_TGEO_SUPPORT=ON \
   -DCMAKE_INSTALL_PREFIX=/path/to/install
 
 cmake --build build -- -j$(nproc)
@@ -103,6 +107,9 @@ target_link_libraries(myApp PRIVATE G4OCCT::G4OCCT)
 
 The installed `G4OCCTConfig.cmake` propagates the Geant4 and OCCT
 dependencies automatically.
+
+When `BUILD_ROOT_TGEO_SUPPORT=ON`, the installed package also propagates the
+ROOT Geom dependency needed for `TGeoOCCTSolid`.
 
 ---
 

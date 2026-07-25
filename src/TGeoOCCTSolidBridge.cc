@@ -1,0 +1,218 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2026 G4OCCT Contributors
+
+#include "TGeoOCCTSolidBridge.hh"
+
+#include "G4OCCTSolidKernel.hh"
+
+#include <IFSelect_ReturnStatus.hxx>
+#include <STEPControl_Reader.hxx>
+
+#include <G4ThreeVector.hh>
+
+#include <atomic>
+#include <cstdint>
+#include <memory>
+#include <stdexcept>
+#include <unordered_map>
+
+namespace g4occt::detail {
+
+namespace {
+
+  constexpr double kCmToMm   = 10.0;
+  constexpr double kMmToCm   = 0.1;
+  constexpr double kMm3ToCm3 = 0.001;
+
+  G4ThreeVector ToKernelPoint(const double* point_cm) {
+    return G4ThreeVector(point_cm[0] * kCmToMm, point_cm[1] * kCmToMm, point_cm[2] * kCmToMm);
+  }
+
+  G4ThreeVector ToKernelDirection(const double* dir) {
+    return G4ThreeVector(dir[0], dir[1], dir[2]);
+  }
+
+  void WriteNormal(const G4ThreeVector& normal, double* out) {
+    out[0] = normal.x();
+    out[1] = normal.y();
+    out[2] = normal.z();
+  }
+
+  TGeoOCCTSolidBridge::PointClassification
+  ToBridgePointClassification(const G4OCCTSolidKernel::PointClassification classification) {
+    switch (classification) {
+    case G4OCCTSolidKernel::PointClassification::kInside:
+      return TGeoOCCTSolidBridge::PointClassification::kInside;
+    case G4OCCTSolidKernel::PointClassification::kSurface:
+      return TGeoOCCTSolidBridge::PointClassification::kSurface;
+    case G4OCCTSolidKernel::PointClassification::kOutside:
+      return TGeoOCCTSolidBridge::PointClassification::kOutside;
+    }
+    throw std::runtime_error("TGeoOCCTSolidBridge::ClassifyCm: unknown point classification");
+  }
+
+  struct ThreadCaches {
+    G4OCCTSolidKernel::ClassifierCache classifier;
+    G4OCCTSolidKernel::IntersectorCache intersector;
+    G4OCCTSolidKernel::SphereCacheData sphere;
+  };
+
+  struct ThreadCacheEntry {
+    std::weak_ptr<const void> lifetime;
+    std::unique_ptr<ThreadCaches> caches;
+  };
+
+} // namespace
+
+class TGeoOCCTSolidBridge::Impl {
+public:
+  explicit Impl(const TopoDS_Shape& shape)
+      : cacheKey(NextCacheKey())
+      , cacheLifetime(std::make_shared<const std::uint8_t>(0))
+      , kernel(shape) {}
+  ~Impl() { ThreadLocalCaches().erase(cacheKey); }
+
+  ThreadCaches& CachesForThisThread() const {
+    auto& caches  = ThreadLocalCaches();
+    auto existing = caches.find(cacheKey);
+    if (existing != caches.end()) {
+      return *existing->second.caches;
+    }
+
+    for (auto it = caches.begin(); it != caches.end();) {
+      if (it->second.lifetime.expired()) {
+        it = caches.erase(it);
+      } else {
+        ++it;
+      }
+    }
+
+    auto it = caches
+                  .emplace(cacheKey, ThreadCacheEntry{std::weak_ptr<const void>{cacheLifetime},
+                                                      std::make_unique<ThreadCaches>()})
+                  .first;
+    return *it->second.caches;
+  }
+
+  static std::unordered_map<std::uint64_t, ThreadCacheEntry>& ThreadLocalCaches() {
+    static thread_local std::unordered_map<std::uint64_t, ThreadCacheEntry> caches;
+    return caches;
+  }
+
+  static std::uint64_t NextCacheKey() {
+    static std::atomic<std::uint64_t> nextKey{1};
+    return nextKey.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  const std::uint64_t cacheKey;
+  std::shared_ptr<const void> cacheLifetime;
+  G4OCCTSolidKernel kernel;
+};
+
+double TGeoOCCTSolidBridge::InfinityCm() { return G4OCCTSolidKernel::Infinity() * kMmToCm; }
+
+TGeoOCCTSolidBridge::TGeoOCCTSolidBridge(const TopoDS_Shape& shape)
+    : fImpl(std::make_unique<Impl>(shape)) {}
+
+TGeoOCCTSolidBridge::~TGeoOCCTSolidBridge() = default;
+
+std::unique_ptr<TGeoOCCTSolidBridge> TGeoOCCTSolidBridge::FromSTEP(const std::string& name,
+                                                                   const std::string& path) {
+  STEPControl_Reader reader;
+  const IFSelect_ReturnStatus status = reader.ReadFile(path.c_str());
+  if (status != IFSelect_RetDone) {
+    throw std::runtime_error("TGeoOCCTSolidBridge::FromSTEP: failed to read STEP file \"" + path +
+                             "\"");
+  }
+  if (reader.NbRootsForTransfer() == 0) {
+    throw std::runtime_error("TGeoOCCTSolidBridge::FromSTEP: STEP file \"" + path +
+                             "\" contains no root shapes");
+  }
+  const Standard_Integer transferredRoots = reader.TransferRoots();
+  if (transferredRoots == 0) {
+    throw std::runtime_error(
+        "TGeoOCCTSolidBridge::FromSTEP: STEP transfer produced no shapes for \"" + path + "\"");
+  }
+  const TopoDS_Shape shape = reader.OneShape();
+  if (shape.IsNull()) {
+    throw std::runtime_error("TGeoOCCTSolidBridge::FromSTEP: STEP file \"" + path +
+                             "\" yielded a null shape for \"" + name + "\"");
+  }
+  return std::make_unique<TGeoOCCTSolidBridge>(shape);
+}
+
+const TopoDS_Shape& TGeoOCCTSolidBridge::Shape() const { return fImpl->kernel.Shape(); }
+
+void TGeoOCCTSolidBridge::SetShape(const TopoDS_Shape& shape) { fImpl->kernel.SetShape(shape); }
+
+TGeoOCCTSolidBridge::BoundsCm TGeoOCCTSolidBridge::Bounds() const {
+  const auto& bounds            = fImpl->kernel.Bounds();
+  const G4ThreeVector center_mm = 0.5 * (bounds.min + bounds.max);
+  const G4ThreeVector half_mm   = 0.5 * (bounds.max - bounds.min);
+  return BoundsCm{
+      .dx     = half_mm.x() * kMmToCm,
+      .dy     = half_mm.y() * kMmToCm,
+      .dz     = half_mm.z() * kMmToCm,
+      .origin = {center_mm.x() * kMmToCm, center_mm.y() * kMmToCm, center_mm.z() * kMmToCm},
+  };
+}
+
+double TGeoOCCTSolidBridge::CapacityCm3() const {
+  return fImpl->kernel.GetCubicVolume() * kMm3ToCm3;
+}
+
+double TGeoOCCTSolidBridge::SafetyCm(const double* point_cm, bool inside) const {
+  ThreadCaches& caches         = fImpl->CachesForThisThread();
+  const G4ThreeVector point_mm = ToKernelPoint(point_cm);
+  const double safety_mm       = inside ? fImpl->kernel.DistanceToOut(point_mm, caches.sphere)
+                                        : fImpl->kernel.DistanceToIn(point_mm, caches.classifier);
+  return safety_mm * kMmToCm;
+}
+
+double TGeoOCCTSolidBridge::DistFromOutsideCm(const double* point_cm, const double* dir,
+                                              double* safe_cm) const {
+  ThreadCaches& caches         = fImpl->CachesForThisThread();
+  const G4ThreeVector point_mm = ToKernelPoint(point_cm);
+  if (safe_cm != nullptr) {
+    *safe_cm = fImpl->kernel.DistanceToIn(point_mm, caches.classifier) * kMmToCm;
+  }
+  const double dist_mm =
+      fImpl->kernel.DistanceToIn(point_mm, ToKernelDirection(dir), caches.intersector);
+  return dist_mm * kMmToCm;
+}
+
+double TGeoOCCTSolidBridge::DistFromInsideCm(const double* point_cm, const double* dir,
+                                             double* safe_cm, bool calcNorm, double* norm,
+                                             bool* validNorm) const {
+  ThreadCaches& caches         = fImpl->CachesForThisThread();
+  const G4ThreeVector point_mm = ToKernelPoint(point_cm);
+  if (safe_cm != nullptr) {
+    *safe_cm = fImpl->kernel.DistanceToOut(point_mm, caches.sphere) * kMmToCm;
+  }
+
+  G4bool g4ValidNorm = false;
+  G4ThreeVector g4Norm;
+  const double dist_mm =
+      fImpl->kernel.DistanceToOut(point_mm, ToKernelDirection(dir), caches.intersector, calcNorm,
+                                  &g4ValidNorm, calcNorm ? &g4Norm : nullptr);
+  if (validNorm != nullptr) {
+    *validNorm = g4ValidNorm;
+  }
+  if (calcNorm && norm != nullptr && g4ValidNorm) {
+    WriteNormal(g4Norm, norm);
+  }
+  return dist_mm * kMmToCm;
+}
+
+TGeoOCCTSolidBridge::PointClassification
+TGeoOCCTSolidBridge::ClassifyCm(const double* point_cm) const {
+  ThreadCaches& caches = fImpl->CachesForThisThread();
+  return ToBridgePointClassification(fImpl->kernel.ClassifyPoint(
+      ToKernelPoint(point_cm), caches.classifier, caches.intersector, caches.sphere));
+}
+
+void TGeoOCCTSolidBridge::SurfaceNormalCm(const double* point_cm, double* norm) const {
+  WriteNormal(fImpl->kernel.SurfaceNormal(ToKernelPoint(point_cm)), norm);
+}
+
+} // namespace g4occt::detail
