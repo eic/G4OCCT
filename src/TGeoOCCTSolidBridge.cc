@@ -38,6 +38,19 @@ namespace {
     out[2] = normal.z();
   }
 
+  TGeoOCCTSolidBridge::PointClassification
+  ToBridgePointClassification(const G4OCCTSolidKernel::PointClassification classification) {
+    switch (classification) {
+    case G4OCCTSolidKernel::PointClassification::kInside:
+      return TGeoOCCTSolidBridge::PointClassification::kInside;
+    case G4OCCTSolidKernel::PointClassification::kSurface:
+      return TGeoOCCTSolidBridge::PointClassification::kSurface;
+    case G4OCCTSolidKernel::PointClassification::kOutside:
+      return TGeoOCCTSolidBridge::PointClassification::kOutside;
+    }
+    throw std::runtime_error("TGeoOCCTSolidBridge::ClassifyCm: unknown point classification");
+  }
+
   struct ThreadCaches {
     G4OCCTSolidKernel::ClassifierCache classifier;
     G4OCCTSolidKernel::IntersectorCache intersector;
@@ -191,7 +204,7 @@ double TGeoOCCTSolidBridge::DistFromInsideCm(const double* point_cm, const doubl
 TGeoOCCTSolidBridge::PointClassification
 TGeoOCCTSolidBridge::ClassifyCm(const double* point_cm) const {
   ThreadCaches& caches = fImpl->CachesForThisThread();
-  return static_cast<PointClassification>(fImpl->kernel.ClassifyPoint(
+  return ToBridgePointClassification(fImpl->kernel.ClassifyPoint(
       ToKernelPoint(point_cm), caches.classifier, caches.intersector, caches.sphere));
 }
 

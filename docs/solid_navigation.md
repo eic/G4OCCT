@@ -58,7 +58,7 @@ The shared kernel is responsible for:
 - translating between the `G4VSolid` API and the shared kernel
 - owning Geant4 thread-local wrappers for the classifier/intersector/sphere
   contexts used by the Geant4 workflow
-- Geant4-specific visualization plumbing such as `CreatePolyhedron()`
+- Geant4-specific visualisation plumbing such as `CreatePolyhedron()`
 
 As of issue #379, a second frontend exists:
 
