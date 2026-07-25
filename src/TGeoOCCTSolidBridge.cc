@@ -51,9 +51,7 @@ public:
   explicit Impl(const TopoDS_Shape& shape) : cacheKey(NextCacheKey()), kernel(shape) {}
   ~Impl() { ThreadLocalCaches().erase(cacheKey); }
 
-  ThreadCaches& CachesForThisThread() const {
-    return ThreadLocalCaches()[cacheKey];
-  }
+  ThreadCaches& CachesForThisThread() const { return ThreadLocalCaches()[cacheKey]; }
 
   static std::unordered_map<std::uint64_t, ThreadCaches>& ThreadLocalCaches() {
     static thread_local std::unordered_map<std::uint64_t, ThreadCaches> caches;
