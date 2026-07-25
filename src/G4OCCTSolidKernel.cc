@@ -163,7 +163,7 @@ public:
       return Standard_False;
     }
     ++myCrossings;
-      constexpr Standard_Real kEdgeTol = 1e-6;
+    constexpr Standard_Real kEdgeTol = 1e-6;
     if (u < kEdgeTol || v < kEdgeTol || (1.0 - u - v) < kEdgeTol) {
       myDegenerate = Standard_True;
     }
