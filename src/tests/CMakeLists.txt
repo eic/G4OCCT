@@ -132,6 +132,10 @@ if(BUILD_ROOT_TGEO_SUPPORT)
     target_compile_definitions(
       test_tgeo_dd4hep_eval
       PRIVATE G4OCCT_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    if(NOT TARGET ROOT::Geom)
+      target_include_directories(test_tgeo_dd4hep_eval
+                                 PRIVATE ${ROOT_INCLUDE_DIRS})
+    endif()
   endif()
 endif()
 

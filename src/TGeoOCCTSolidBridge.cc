@@ -73,7 +73,12 @@ public:
   ~Impl() { ThreadLocalCaches().erase(cacheKey); }
 
   ThreadCaches& CachesForThisThread() const {
-    auto& caches = ThreadLocalCaches();
+    auto& caches  = ThreadLocalCaches();
+    auto existing = caches.find(cacheKey);
+    if (existing != caches.end()) {
+      return *existing->second.caches;
+    }
+
     for (auto it = caches.begin(); it != caches.end();) {
       if (it->second.lifetime.expired()) {
         it = caches.erase(it);
@@ -82,16 +87,10 @@ public:
       }
     }
 
-    auto [it, inserted] =
-        caches.try_emplace(cacheKey, ThreadCacheEntry{std::weak_ptr<const void>{cacheLifetime},
-                                                      std::make_unique<ThreadCaches>()});
-    if (!inserted && it->second.lifetime.expired()) {
-      caches.erase(it);
-      it = caches
-               .emplace(cacheKey, ThreadCacheEntry{std::weak_ptr<const void>{cacheLifetime},
-                                                   std::make_unique<ThreadCaches>()})
-               .first;
-    }
+    auto it = caches
+                  .emplace(cacheKey, ThreadCacheEntry{std::weak_ptr<const void>{cacheLifetime},
+                                                      std::make_unique<ThreadCaches>()})
+                  .first;
     return *it->second.caches;
   }
 
