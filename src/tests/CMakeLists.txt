@@ -126,7 +126,6 @@ if(BUILD_ROOT_TGEO_SUPPORT)
                                PRIVATE ${ROOT_INCLUDE_DIRS})
   endif()
 
-  find_package(DD4hep QUIET)
   if(DD4hep_FOUND)
     g4occt_gtest(test_tgeo_dd4hep_eval test_tgeo_dd4hep_eval.cc LINK_LIBRARIES
                  ${_g4occt_root_tgeo_test_libs} DD4hep::DDCore)

@@ -22,6 +22,17 @@ namespace g4occt::detail {
 class TGeoOCCTSolidBridge;
 }
 
+/**
+ * @brief ROOT/TGeo adapter backed by the shared G4OCCT solid-query kernel.
+ *
+ * TGeoOCCTSolid exposes an OCCT `TopoDS_Shape` through the `TGeoShape`
+ * navigation interface by delegating all geometric queries to
+ * `G4OCCTSolidKernel` via an internal bridge layer.
+ *
+ * Coordinate and distance units at the TGeo boundary are centimetres, while the
+ * shared kernel uses Geant4 millimetres internally. The bridge performs the
+ * required cm↔mm conversions for all query inputs and outputs.
+ */
 class TGeoOCCTSolid : public TGeoShape {
 public:
   TGeoOCCTSolid();

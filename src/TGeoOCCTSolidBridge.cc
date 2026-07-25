@@ -10,6 +10,8 @@
 
 #include <G4ThreeVector.hh>
 
+#include <atomic>
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
@@ -46,13 +48,24 @@ namespace {
 
 class TGeoOCCTSolidBridge::Impl {
 public:
-  explicit Impl(const TopoDS_Shape& shape) : kernel(shape) {}
+  explicit Impl(const TopoDS_Shape& shape) : cacheKey(NextCacheKey()), kernel(shape) {}
+  ~Impl() { ThreadLocalCaches().erase(cacheKey); }
 
   ThreadCaches& CachesForThisThread() const {
-    static thread_local std::unordered_map<const Impl*, ThreadCaches> caches;
-    return caches[this];
+    return ThreadLocalCaches()[cacheKey];
   }
 
+  static std::unordered_map<std::uint64_t, ThreadCaches>& ThreadLocalCaches() {
+    static thread_local std::unordered_map<std::uint64_t, ThreadCaches> caches;
+    return caches;
+  }
+
+  static std::uint64_t NextCacheKey() {
+    static std::atomic<std::uint64_t> nextKey{1};
+    return nextKey.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  const std::uint64_t cacheKey;
   G4OCCTSolidKernel kernel;
 };
 

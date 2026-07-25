@@ -36,7 +36,11 @@ TGeoOCCTSolid* TGeoOCCTSolid::FromSTEP(const char* name, const std::string& path
 Double_t TGeoOCCTSolid::Capacity() const { return fBridge ? fBridge->CapacityCm3() : 0.0; }
 
 void TGeoOCCTSolid::ComputeBBox() {
-  EnsureBBoxHelper();
+  if (!fBridge) {
+    Double_t origin[3] = {0.0, 0.0, 0.0};
+    fBBoxHelper        = std::make_unique<TGeoBBox>(GetName(), 0.0, 0.0, 0.0, origin);
+    return;
+  }
   const auto bounds  = fBridge->Bounds();
   Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
   fBBoxHelper = std::make_unique<TGeoBBox>(GetName(), bounds.dx, bounds.dy, bounds.dz, origin);
@@ -186,7 +190,13 @@ void TGeoOCCTSolid::Sizeof3D() const {
   fBBoxHelper->Sizeof3D();
 }
 
-const TopoDS_Shape& TGeoOCCTSolid::GetOCCTShape() const { return fBridge->Shape(); }
+const TopoDS_Shape& TGeoOCCTSolid::GetOCCTShape() const {
+  if (!fBridge) {
+    throw std::runtime_error(
+        "TGeoOCCTSolid::GetOCCTShape called on an uninitialized TGeoOCCTSolid");
+  }
+  return fBridge->Shape();
+}
 
 void TGeoOCCTSolid::SetOCCTShape(const TopoDS_Shape& shape) {
   if (!fBridge) {
