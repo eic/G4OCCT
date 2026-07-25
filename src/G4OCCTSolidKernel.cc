@@ -887,7 +887,7 @@ G4ThreeVector G4OCCTSolidKernel::SurfaceNormal(const G4ThreeVector& p) const {
     return TryGetOutwardNormal(fb.adaptor, fb.face, u, v).value_or(FallbackNormal());
   };
 
-  const G4double bvhLB        = BVHLowerBoundDistance(p);
+  const G4double bvhLB = BVHLowerBoundDistance(p);
   // The BVH gives a lower bound to the true surface distance. Adding
   // 2×deflection turns that into a conservative face-search radius that still
   // prunes obviously distant faces before exact OCCT distance checks.
