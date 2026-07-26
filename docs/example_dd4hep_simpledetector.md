@@ -34,6 +34,7 @@ Configure with both examples and the DD4hep plugin enabled:
 cmake -S . -B build \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_EXAMPLES=ON \
+  -DBUILD_ROOT_TGEO_SUPPORT=ON \
   -DBUILD_DD4HEP_PLUGIN=ON
 cmake --build build -- -j$(nproc)
 ```

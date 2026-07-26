@@ -299,11 +299,14 @@ option(BUILD_DD4HEP_PLUGIN
 # cmake-format: on
 
 if(BUILD_DD4HEP_PLUGIN)
+  if(NOT BUILD_ROOT_TGEO_SUPPORT)
+    message(FATAL_ERROR
+      "BUILD_DD4HEP_PLUGIN=ON requires BUILD_ROOT_TGEO_SUPPORT=ON")
+  endif()
   find_package(DD4hep QUIET)
   if(NOT DD4hep_FOUND)
-    message(WARNING
-      "BUILD_DD4HEP_PLUGIN=ON but DD4hep was not found. "
-      "The DD4hep plugin will not be built.")
+    message(FATAL_ERROR
+      "BUILD_DD4HEP_PLUGIN=ON but DD4hep was not found.")
   else()
     add_subdirectory(src/dd4hep)
   endif()
@@ -390,6 +393,7 @@ dd4hep-plugin:
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_TESTING=ON \
+            -DBUILD_ROOT_TGEO_SUPPORT=ON \
             -DBUILD_DD4HEP_PLUGIN=ON
           cmake --build build --parallel $(nproc)
           ctest --test-dir build -L dd4hep --output-on-failure
