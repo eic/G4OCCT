@@ -180,12 +180,14 @@ const TGeoOCCTSolidBridge::DisplayMeshCm& TGeoOCCTSolidBridge::DisplayMesh() con
         .p3 = {tri.p3.x() * kMmToCm, tri.p3.y() * kMmToCm, tri.p3.z() * kMmToCm},
     });
   }
-  fImpl->displayMesh = std::move(mesh);
+  fImpl->displayMesh           = std::move(mesh);
   fImpl->displayMeshGeneration = generation;
   return *fImpl->displayMesh;
 }
 
-std::uint64_t TGeoOCCTSolidBridge::ShapeGeneration() const { return fImpl->kernel.ShapeGeneration(); }
+std::uint64_t TGeoOCCTSolidBridge::ShapeGeneration() const {
+  return fImpl->kernel.ShapeGeneration();
+}
 
 double TGeoOCCTSolidBridge::CapacityCm3() const {
   return fImpl->kernel.GetCubicVolume() * kMm3ToCm3;

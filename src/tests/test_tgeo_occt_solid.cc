@@ -106,7 +106,7 @@ TEST(TGeoOCCTSolid, BBoxAndCapacityAreInCm) {
 }
 
 TEST(TGeoOCCTSolid, MeshHooksProduceDrawableMesh) {
-  auto solid = LoadBox();
+  auto solid  = LoadBox();
   Int_t nvert = 0;
   Int_t nsegs = 0;
   Int_t npols = 0;
@@ -146,8 +146,8 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
 
   TGeoManager manager("geom", "geom");
   auto* material = new TGeoMaterial("mat", 1.0, 1.0, 1.0);
-  auto* medium = new TGeoMedium("med", 1, material);
-  auto* top = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
+  auto* medium   = new TGeoMedium("med", 1, material);
+  auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
   manager.SetTopVolume(top);
   auto* inner = new TGeoVolume("inner", solid.release(), medium);
   top->AddNode(inner, 1);
