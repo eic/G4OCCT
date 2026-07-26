@@ -163,25 +163,39 @@ TGeoOCCTSolidBridge::BoundsCm TGeoOCCTSolidBridge::Bounds() const {
 }
 
 std::shared_ptr<const TGeoOCCTSolidBridge::DisplayMeshCm> TGeoOCCTSolidBridge::DisplayMesh() const {
-  std::unique_lock<std::mutex> lock(fImpl->displayMeshMutex);
-  const std::uint64_t generation = fImpl->kernel.ShapeGeneration();
-  if (fImpl->displayMesh && fImpl->displayMeshGeneration == generation) {
+  for (;;) {
+    const std::uint64_t generationToBuild = fImpl->kernel.ShapeGeneration();
+    {
+      std::unique_lock<std::mutex> lock(fImpl->displayMeshMutex);
+      if (fImpl->displayMesh && fImpl->displayMeshGeneration == generationToBuild) {
+        return fImpl->displayMesh;
+      }
+    }
+
+    DisplayMeshCm mesh;
+    const auto& surfaceCache = fImpl->kernel.GetOrBuildSurfaceCache();
+    mesh.triangles.reserve(surfaceCache.triangles.size());
+    for (const auto& tri : surfaceCache.triangles) {
+      mesh.triangles.push_back(DisplayTriangleCm{
+          .p1 = {tri.p1.x() * kMmToCm, tri.p1.y() * kMmToCm, tri.p1.z() * kMmToCm},
+          .p2 = {tri.p2.x() * kMmToCm, tri.p2.y() * kMmToCm, tri.p2.z() * kMmToCm},
+          .p3 = {tri.p3.x() * kMmToCm, tri.p3.y() * kMmToCm, tri.p3.z() * kMmToCm},
+      });
+    }
+    auto builtMesh = std::make_shared<DisplayMeshCm>(std::move(mesh));
+
+    std::unique_lock<std::mutex> lock(fImpl->displayMeshMutex);
+    const std::uint64_t currentGeneration = fImpl->kernel.ShapeGeneration();
+    if (fImpl->displayMesh && fImpl->displayMeshGeneration == currentGeneration) {
+      return fImpl->displayMesh;
+    }
+    if (currentGeneration != generationToBuild) {
+      continue;
+    }
+    fImpl->displayMesh           = std::move(builtMesh);
+    fImpl->displayMeshGeneration = currentGeneration;
     return fImpl->displayMesh;
   }
-
-  DisplayMeshCm mesh;
-  const auto& surfaceCache = fImpl->kernel.GetOrBuildSurfaceCache();
-  mesh.triangles.reserve(surfaceCache.triangles.size());
-  for (const auto& tri : surfaceCache.triangles) {
-    mesh.triangles.push_back(DisplayTriangleCm{
-        .p1 = {tri.p1.x() * kMmToCm, tri.p1.y() * kMmToCm, tri.p1.z() * kMmToCm},
-        .p2 = {tri.p2.x() * kMmToCm, tri.p2.y() * kMmToCm, tri.p2.z() * kMmToCm},
-        .p3 = {tri.p3.x() * kMmToCm, tri.p3.y() * kMmToCm, tri.p3.z() * kMmToCm},
-    });
-  }
-  fImpl->displayMesh           = std::make_shared<DisplayMeshCm>(std::move(mesh));
-  fImpl->displayMeshGeneration = generation;
-  return fImpl->displayMesh;
 }
 
 std::uint64_t TGeoOCCTSolidBridge::ShapeGeneration() const {

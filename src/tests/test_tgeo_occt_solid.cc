@@ -143,21 +143,27 @@ TEST(TGeoOCCTSolid, SphereSafetyUsesCmUnits) {
 }
 
 TEST(TGeoOCCTSolid, RootDrawingSmoke) {
+  const Bool_t previousBatchMode   = gROOT->IsBatch();
+  TGeoManager* previousTGeoManager = gGeoManager;
   gROOT->SetBatch(kTRUE);
-  auto solid = LoadBox();
+  {
+    auto solid = LoadBox();
 
-  TGeoManager manager("geom", "geom");
-  auto* material = new TGeoMaterial("mat", 1.0, 1.0, 1.0);
-  auto* medium   = new TGeoMedium("med", 1, material);
-  auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
-  manager.SetTopVolume(top);
-  auto* inner = new TGeoVolume("inner", solid.release(), medium);
-  top->AddNode(inner, 1);
-  manager.CloseGeometry();
+    TGeoManager manager("geom", "geom");
+    auto* material = new TGeoMaterial("mat", 1.0, 1.0, 1.0);
+    auto* medium   = new TGeoMedium("med", 1, material);
+    auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
+    manager.SetTopVolume(top);
+    auto* inner = new TGeoVolume("inner", solid.release(), medium);
+    top->AddNode(inner, 1);
+    manager.CloseGeometry();
 
-  TCanvas canvas("tgeoocctsolid", "tgeoocctsolid", 400, 300);
-  inner->Draw();
-  canvas.Update();
+    TCanvas canvas("tgeoocctsolid", "tgeoocctsolid", 400, 300);
+    inner->Draw();
+    canvas.Update();
+  }
+  gROOT->SetBatch(previousBatchMode);
+  gGeoManager = previousTGeoManager;
 }
 
 } // namespace
