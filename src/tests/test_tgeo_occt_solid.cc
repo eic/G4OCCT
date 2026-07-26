@@ -143,8 +143,16 @@ TEST(TGeoOCCTSolid, SphereSafetyUsesCmUnits) {
 }
 
 TEST(TGeoOCCTSolid, RootDrawingSmoke) {
-  const Bool_t previousBatchMode   = gROOT->IsBatch();
-  TGeoManager* previousTGeoManager = gGeoManager;
+  struct RootStateGuard {
+    const Bool_t previousBatchMode;
+    TGeoManager* previousTGeoManager;
+    ~RootStateGuard() {
+      gROOT->SetBatch(previousBatchMode);
+      gGeoManager = previousTGeoManager;
+    }
+  };
+
+  const RootStateGuard stateGuard{gROOT->IsBatch(), gGeoManager};
   gROOT->SetBatch(kTRUE);
   {
     auto solid = LoadBox();
@@ -162,8 +170,6 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
     inner->Draw();
     canvas.Update();
   }
-  gROOT->SetBatch(previousBatchMode);
-  gGeoManager = previousTGeoManager;
 }
 
 } // namespace
