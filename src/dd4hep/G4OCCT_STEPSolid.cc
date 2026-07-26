@@ -47,8 +47,8 @@ static Ref_t create_step_solid(Detector& description, xml_h e, SensitiveDetector
     throw std::runtime_error("G4OCCT_STEPSolid: import of '" + path +
                              "' returned a null TGeoOCCTSolid");
   }
-  printout(INFO, "G4OCCT_STEPSolid", "Imported '%s' from '%s' as exact TGeoOCCTSolid",
-           name.c_str(), path.c_str());
+  printout(INFO, "G4OCCT_STEPSolid", "Imported '%s' from '%s' as exact TGeoOCCTSolid", name.c_str(),
+           path.c_str());
 
   // ── DD4hep volume and placement ──────────────────────────────────────────
   Material mat = description.material(x_mat.attr<std::string>(_Unicode(name)));

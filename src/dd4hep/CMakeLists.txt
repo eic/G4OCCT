@@ -132,12 +132,8 @@ if(USE_ASAN
 endif()
 
 dd4hep_add_plugin(
-  G4OCCTDD4hep
-  SOURCES
-  G4OCCT_STEPSolid.cc
-  G4OCCT_STEPAssembly.cc
-  G4OCCT_STEPAssembly_impl.cc
-  G4OCCT_STEPAssemblySD.cc)
+  G4OCCTDD4hep SOURCES G4OCCT_STEPSolid.cc G4OCCT_STEPAssembly.cc
+  G4OCCT_STEPAssembly_impl.cc G4OCCT_STEPAssemblySD.cc)
 
 target_link_libraries(G4OCCTDD4hep PRIVATE G4OCCT::G4OCCT DD4hep::DDCore)
 

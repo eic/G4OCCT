@@ -139,14 +139,14 @@ TEST_F(STEPSolidTest, ExactSolidUnitsInCm) {
   auto* solid = dynamic_cast<TGeoOCCTSolid*>(vol.solid().ptr());
   ASSERT_NE(solid, nullptr) << "Volume solid is not a TGeoOCCTSolid";
 
-  const Double_t centre[3]     = {0.0, 0.0, 0.0};
-  const Double_t outsideX[3]   = {1.1, 0.0, 0.0};
-  const Double_t outsideY[3]   = {0.0, 1.6, 0.0};
-  const Double_t outsideZ[3]   = {0.0, 0.0, 2.1};
-  const Double_t minusXDir[3]  = {-1.0, 0.0, 0.0};
-  const Double_t minusYDir[3]  = {0.0, -1.0, 0.0};
-  const Double_t minusZDir[3]  = {0.0, 0.0, -1.0};
-  constexpr double kDistTolCm  = 1e-3;
+  const Double_t centre[3]    = {0.0, 0.0, 0.0};
+  const Double_t outsideX[3]  = {1.1, 0.0, 0.0};
+  const Double_t outsideY[3]  = {0.0, 1.6, 0.0};
+  const Double_t outsideZ[3]  = {0.0, 0.0, 2.1};
+  const Double_t minusXDir[3] = {-1.0, 0.0, 0.0};
+  const Double_t minusYDir[3] = {0.0, -1.0, 0.0};
+  const Double_t minusZDir[3] = {0.0, 0.0, -1.0};
+  constexpr double kDistTolCm = 1e-3;
 
   EXPECT_TRUE(solid->Contains(centre));
   EXPECT_FALSE(solid->Contains(outsideX));
