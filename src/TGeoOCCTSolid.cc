@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <stdexcept>
 
@@ -269,6 +270,10 @@ void TGeoOCCTSolid::EnsureDisplayHelper() const {
   }
 
   const auto mesh = fBridge->DisplayMesh();
+  if (mesh->triangles.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+    throw std::runtime_error("TGeoOCCTSolid::EnsureDisplayHelper mesh exceeds TGeoTessellated "
+                             "facet-count limit");
+  }
   auto helper =
       std::make_unique<TGeoTessellated>(GetName(), static_cast<int>(mesh->triangles.size()));
   for (const auto& tri : mesh->triangles) {
