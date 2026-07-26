@@ -90,11 +90,10 @@ public:
   void SetOCCTShape(const TopoDS_Shape& shape);
 
 private:
-  void EnsureBBoxHelper() const;
+  TGeoBBox BuildBBoxHelper() const;
   void EnsureDisplayHelper() const;
 
   std::unique_ptr<g4occt::detail::TGeoOCCTSolidBridge> fBridge;
-  mutable std::unique_ptr<TGeoBBox> fBBoxHelper;
   mutable std::unique_ptr<TGeoTessellated> fDisplayHelper;
   mutable std::uint64_t fDisplayGeneration{std::numeric_limits<std::uint64_t>::max()};
 };
