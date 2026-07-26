@@ -58,7 +58,7 @@ void TGeoOCCTSolid::ComputeBBox() {
   }
   const auto bounds  = fBridge->Bounds();
   Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
-  fBBoxHelper = std::make_unique<TGeoBBox>(bounds.dx, bounds.dy, bounds.dz, origin);
+  fBBoxHelper        = std::make_unique<TGeoBBox>(bounds.dx, bounds.dy, bounds.dz, origin);
 }
 
 void TGeoOCCTSolid::ComputeNormal(const Double_t* point, const Double_t* /*dir*/,
@@ -250,7 +250,7 @@ void TGeoOCCTSolid::EnsureBBoxHelper() const {
     } else {
       const auto bounds  = fBridge->Bounds();
       Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
-      fBBoxHelper = std::make_unique<TGeoBBox>(bounds.dx, bounds.dy, bounds.dz, origin);
+      fBBoxHelper        = std::make_unique<TGeoBBox>(bounds.dx, bounds.dy, bounds.dz, origin);
     }
   }
 }
