@@ -162,17 +162,22 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
   gROOT->SetBatch(kTRUE);
   {
     // Create the TGeoManager FIRST so that the solid returned by LoadBox()
-    // auto-registers with this manager rather than triggering ROOT to create a
-    // separate "default geometry" that would be deleted (along with the solid)
-    // when this named manager initialises.  Because the solid is auto-
-    // registered, do NOT call manager.AddShape() — doing so would result in a
-    // double-free when the manager is destructed.
+    // below does not cause ROOT to auto-create a "default geometry" manager.
+    // If LoadBox() were called while gGeoManager == nullptr, ROOT would create
+    // a "default geometry" that takes ownership of the solid; constructing the
+    // named manager below would then delete the default geometry — and the solid
+    // with it — leaving a dangling pointer.
+    //
+    // With the manager in place, TGeoVolume does NOT independently delete its
+    // shape.  Call manager.AddShape() so the manager takes ownership and deletes
+    // the solid on destruction (without this call the solid leaks).
     TGeoManager manager("geom", "geom");
     auto* material = new TGeoMaterial("mat", 1.0, 1.0, 1.0);
     auto* medium   = new TGeoMedium("med", 1, material);
     auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
     manager.SetTopVolume(top);
     auto* inner = new TGeoVolume("inner", LoadBox().release(), medium);
+    manager.AddShape(inner->GetShape());
     top->AddNode(inner, 1);
     manager.CloseGeometry();
 
