@@ -268,10 +268,10 @@ void TGeoOCCTSolid::EnsureDisplayHelper() const {
     return;
   }
 
-  const auto& mesh = fBridge->DisplayMesh();
+  const auto mesh = fBridge->DisplayMesh();
   auto helper =
-      std::make_unique<TGeoTessellated>(GetName(), static_cast<int>(mesh.triangles.size()));
-  for (const auto& tri : mesh.triangles) {
+      std::make_unique<TGeoTessellated>(GetName(), static_cast<int>(mesh->triangles.size()));
+  for (const auto& tri : mesh->triangles) {
     helper->AddFacet(TGeoTessellated::Vertex_t(tri.p1[0], tri.p1[1], tri.p1[2]),
                      TGeoTessellated::Vertex_t(tri.p2[0], tri.p2[1], tri.p2[2]),
                      TGeoTessellated::Vertex_t(tri.p3[0], tri.p3[1], tri.p3[2]));

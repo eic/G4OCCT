@@ -15,7 +15,6 @@
 #include <limits>
 #include <memory>
 #include <mutex>
-#include <optional>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -110,7 +109,7 @@ public:
   const std::uint64_t cacheKey;
   std::shared_ptr<const void> cacheLifetime;
   G4OCCTSolidKernel kernel;
-  mutable std::optional<DisplayMeshCm> displayMesh;
+  mutable std::shared_ptr<const DisplayMeshCm> displayMesh;
   mutable std::uint64_t displayMeshGeneration{std::numeric_limits<std::uint64_t>::max()};
   mutable std::mutex displayMeshMutex;
 };
@@ -163,11 +162,11 @@ TGeoOCCTSolidBridge::BoundsCm TGeoOCCTSolidBridge::Bounds() const {
   };
 }
 
-const TGeoOCCTSolidBridge::DisplayMeshCm& TGeoOCCTSolidBridge::DisplayMesh() const {
+std::shared_ptr<const TGeoOCCTSolidBridge::DisplayMeshCm> TGeoOCCTSolidBridge::DisplayMesh() const {
   std::unique_lock<std::mutex> lock(fImpl->displayMeshMutex);
   const std::uint64_t generation = fImpl->kernel.ShapeGeneration();
-  if (fImpl->displayMesh.has_value() && fImpl->displayMeshGeneration == generation) {
-    return *fImpl->displayMesh;
+  if (fImpl->displayMesh && fImpl->displayMeshGeneration == generation) {
+    return fImpl->displayMesh;
   }
 
   DisplayMeshCm mesh;
@@ -180,9 +179,9 @@ const TGeoOCCTSolidBridge::DisplayMeshCm& TGeoOCCTSolidBridge::DisplayMesh() con
         .p3 = {tri.p3.x() * kMmToCm, tri.p3.y() * kMmToCm, tri.p3.z() * kMmToCm},
     });
   }
-  fImpl->displayMesh           = std::move(mesh);
+  fImpl->displayMesh           = std::make_shared<DisplayMeshCm>(std::move(mesh));
   fImpl->displayMeshGeneration = generation;
-  return *fImpl->displayMesh;
+  return fImpl->displayMesh;
 }
 
 std::uint64_t TGeoOCCTSolidBridge::ShapeGeneration() const {

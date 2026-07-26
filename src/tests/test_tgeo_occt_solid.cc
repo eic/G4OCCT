@@ -15,6 +15,8 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <memory>
+#include <vector>
 
 namespace {
 

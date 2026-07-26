@@ -53,7 +53,7 @@ public:
   void SetShape(const TopoDS_Shape& shape);
 
   BoundsCm Bounds() const;
-  const DisplayMeshCm& DisplayMesh() const;
+  std::shared_ptr<const DisplayMeshCm> DisplayMesh() const;
   std::uint64_t ShapeGeneration() const;
   double CapacityCm3() const;
   double SafetyCm(const double* point_cm, bool inside) const;
