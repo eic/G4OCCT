@@ -143,26 +143,40 @@ TEST(TGeoOCCTSolid, SphereSafetyUsesCmUnits) {
 }
 
 TEST(TGeoOCCTSolid, RootDrawingSmoke) {
-  struct RootStateGuard {
+  struct RootBatchGuard {
     const Bool_t previousBatchMode;
-    TGeoManager* previousTGeoManager;
-    ~RootStateGuard() {
-      gROOT->SetBatch(previousBatchMode);
-      gGeoManager = previousTGeoManager;
-    }
+    ~RootBatchGuard() { gROOT->SetBatch(previousBatchMode); }
   };
 
-  const RootStateGuard stateGuard{gROOT->IsBatch(), gGeoManager};
+  // Delete any TGeoManager that ROOT may have created automatically (e.g. when
+  // a previous test in the same process constructed a TGeoShape with
+  // gGeoManager == nullptr, causing ROOT to create a "default geometry").
+  // We must do this BEFORE creating shapes below; otherwise ROOT's "default
+  // geometry" would take ownership of the solid returned by LoadBox(), then
+  // delete it when our named TGeoManager is constructed — leaving a dangling
+  // pointer.  delete nullptr is a no-op, so this is always safe.
+  delete gGeoManager;
+  gGeoManager = nullptr;
+
+  const RootBatchGuard batchGuard{gROOT->IsBatch()};
   gROOT->SetBatch(kTRUE);
   {
-    auto solid = LoadBox();
-
+    // Create the TGeoManager FIRST so that the solid returned by LoadBox()
+    // below does not cause ROOT to auto-create a "default geometry" manager.
+    // If LoadBox() were called while gGeoManager == nullptr, ROOT would create
+    // a "default geometry" that takes ownership of the solid; constructing the
+    // named manager below would then delete the default geometry — and the solid
+    // with it — leaving a dangling pointer.
+    //
+    // With the manager in place, TGeoVolume does NOT independently delete its
+    // shape.  Call manager.AddShape() so the manager takes ownership and deletes
+    // the solid on destruction (without this call the solid leaks).
     TGeoManager manager("geom", "geom");
     auto* material = new TGeoMaterial("mat", 1.0, 1.0, 1.0);
     auto* medium   = new TGeoMedium("med", 1, material);
     auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
     manager.SetTopVolume(top);
-    auto* inner = new TGeoVolume("inner", solid.release(), medium);
+    auto* inner = new TGeoVolume("inner", LoadBox().release(), medium);
     manager.AddShape(inner->GetShape());
     top->AddNode(inner, 1);
     manager.CloseGeometry();
@@ -171,6 +185,10 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
     inner->Draw();
     canvas.Update();
   }
+  // The stack TGeoManager was destructed at end of the block above; ROOT sets
+  // gGeoManager = nullptr in TGeoManager::~TGeoManager when it is the active
+  // manager.  Null it explicitly for robustness.
+  gGeoManager = nullptr;
 }
 
 } // namespace
