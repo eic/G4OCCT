@@ -41,7 +41,13 @@ between CAD geometry and Geant4 geometry enables:
 | STEP file import via OCCT | GDML export |
 | Multi-shape STEP assembly import | GPU navigation |
 | CTest-based validation suite | Magnetic field integration |
-| Navigator performance benchmarks | Material database mapping (tracked separately) |
+| Navigator performance benchmarks | |
+| Material bridging (`G4OCCTMaterialMap`, `G4OCCTMaterialMapReader`) | |
+| Sensitive detector mapping (`G4OCCTSensitiveDetectorMap/Reader`) | |
+| Assembly volume registry (`G4OCCTAssemblyRegistry`) | |
+| ROOT/TGeo adapter (`TGeoOCCTSolid`, optional via `BUILD_ROOT_TGEO_SUPPORT`) | |
+| DD4hep detector element plugins (`G4OCCT_STEPSolid`, `G4OCCT_STEPAssembly`) | |
+| Standalone `g4occt` interactive application | |
 | Design documents | |
 
 ---
@@ -100,37 +106,54 @@ G4OCCT/
 ├── cmake/
 │   └── G4OCCTConfig.cmake.in
 ├── include/G4OCCT/
-│   ├── G4OCCTSolid.hh           # G4VSolid wrapping TopoDS_Shape
+│   ├── G4OCCTSolid.hh                       # G4VSolid wrapping TopoDS_Shape
 │   ├── G4OCCTLogicalVolume.hh
-│   ├── G4OCCTPlacement.hh       # G4PVPlacement + TopLoc_Location
-│   ├── G4OCCTAssemblyVolume.hh  # multi-shape STEP assembly
-│   └── G4OCCTMaterialMapReader.hh # STEP material name → G4Material*
+│   ├── G4OCCTPlacement.hh                   # G4PVPlacement + TopLoc_Location
+│   ├── G4OCCTAssemblyVolume.hh              # multi-shape STEP assembly (XDE import)
+│   ├── G4OCCTAssemblyRegistry.hh            # singleton registry for plugin workflows
+│   ├── G4OCCTMaterialMap.hh                 # STEP material name → G4Material* map
+│   ├── G4OCCTMaterialMapReader.hh           # XML material map file reader
+│   ├── G4OCCTSensitiveDetectorMap.hh        # volume name → G4VSensitiveDetector* map
+│   ├── G4OCCTSensitiveDetectorMapReader.hh  # XML sensitive detector map reader
+│   └── TGeoOCCTSolid.hh                     # ROOT/TGeo adapter (BUILD_ROOT_TGEO_SUPPORT)
 ├── src/
 │   ├── G4OCCTSolid.cc
+│   ├── G4OCCTSolidKernel.cc / .hh           # shared multi-tier navigation kernel
 │   ├── G4OCCTLogicalVolume.cc
 │   ├── G4OCCTPlacement.cc
 │   ├── G4OCCTAssemblyVolume.cc
+│   ├── G4OCCTAssemblyRegistry.cc
+│   ├── G4OCCTMaterialMap.cc
 │   ├── G4OCCTMaterialMapReader.cc
+│   ├── G4OCCTSensitiveDetectorMap.cc
+│   ├── G4OCCTSensitiveDetectorMapReader.cc
+│   ├── TGeoOCCTSolid.cc / TGeoOCCTSolidBridge.cc  # ROOT/TGeo adapter
+│   ├── app/g4occt/                          # standalone g4occt interactive application
 │   ├── examples/
-│   │   ├── B1/                  # water phantom example
-│   │   └── B4c/                 # sampling calorimeter example
-│   ├── dd4hep/                  # optional DD4hep detector element plugins
+│   │   ├── B1/                              # water phantom example
+│   │   ├── B4c/                             # sampling calorimeter example
+│   │   └── DD4hepSimpleDetector/            # DD4hep STEP-backed VXD layer example
+│   ├── dd4hep/                              # optional DD4hep detector element plugins
 │   │   ├── G4OCCT_STEPSolid.cc
 │   │   ├── G4OCCT_STEPAssembly.cc
-│   │   └── tests/
-│   ├── tests/                   # CTest-integrated unit tests
-│   └── benchmarks/              # navigator benchmarks (bench_navigator, bench_assembly_navigator)
+│   │   └── G4OCCT_STEPAssemblySD.cc
+│   ├── tests/                               # CTest-integrated unit tests
+│   └── benchmarks/                          # navigator benchmarks
 └── docs/
     ├── goals.md
     ├── geometry_mapping.md
+    ├── reference_position.md
     ├── solid_navigation.md
     ├── performance.md
     ├── low_level_optimization.md
     ├── material_bridging.md
     ├── step_assembly_import.md
+    ├── dd4hep_plugin.md
     ├── geometry_test_status.md
+    ├── nist_ctc.md
     ├── example_b1.md
     ├── example_b4c.md
+    ├── example_dd4hep_simpledetector.md
     └── slides.html
 ```
 
@@ -145,6 +168,9 @@ G4OCCT/
 | v0.3 | ✅ Complete | `DistanceToIn/Out` via per-face `IntCurvesFace_Intersector` loop with AABB prefilter | [Solid Navigation Design](solid_navigation.md) §2.3–2.6, [Performance Considerations](performance.md) |
 | v0.4 | ✅ Complete | STEP import end-to-end example | [Example B1 — Water Phantom](example_b1.md) |
 | v0.5 | 🔨 In progress | Full test suite passing for all G4 primitives | [Geometry Test Status](geometry_test_status.md) |
-| v0.6 | 🔲 Planned | Multi-shape STEP assembly import (`G4OCCTAssemblyBuilder`) | [Multi-Shape STEP Assembly Import](step_assembly_import.md) |
-| v0.7 | 🔲 Planned | DD4hep plugin (`G4OCCT_STEPSolid`, `G4OCCT_STEPAssembly`) | [DD4hep Plugin Design](dd4hep_plugin.md) |
-| v1.0 | 🔲 Planned | Production-quality performance, material bridging | [Performance Considerations](performance.md), [Material Bridging](material_bridging.md) |
+| v0.6 | ✅ Complete | Multi-shape STEP assembly import (`G4OCCTAssemblyVolume`) | [Multi-Shape STEP Assembly Import](step_assembly_import.md) |
+| v0.7 | ✅ Complete | DD4hep plugin (`G4OCCT_STEPSolid`, `G4OCCT_STEPAssembly`, `G4OCCT_STEPAssemblySD`) | [DD4hep Plugin Design](dd4hep_plugin.md) |
+| v0.8 | ✅ Complete | Material bridging (`G4OCCTMaterialMap`, `G4OCCTMaterialMapReader`) | [Material Bridging](material_bridging.md) |
+| v0.9 | ✅ Complete | Sensitive detector mapping (`G4OCCTSensitiveDetectorMap/Reader`, `G4OCCTAssemblyRegistry`) | — |
+| v0.10 | ✅ Complete | ROOT/TGeo adapter (`TGeoOCCTSolid`, `BUILD_ROOT_TGEO_SUPPORT`) and standalone `g4occt` application | — |
+| v1.0 | 🔲 Planned | Production-quality performance | [Performance Considerations](performance.md) |
