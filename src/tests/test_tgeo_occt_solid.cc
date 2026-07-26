@@ -163,6 +163,7 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
     auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
     manager.SetTopVolume(top);
     auto* inner = new TGeoVolume("inner", solid.release(), medium);
+    manager.AddShape(inner->GetShape());
     top->AddNode(inner, 1);
     manager.CloseGeometry();
 
