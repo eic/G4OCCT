@@ -131,11 +131,8 @@ if(USE_ASAN
   endfunction()
 endif()
 
-set(_g4occt_dd4hep_sources
-    G4OCCT_STEPSolid.cc
-    G4OCCT_STEPAssembly.cc
-    G4OCCT_STEPAssembly_impl.cc
-    G4OCCT_STEPAssemblySD.cc)
+set(_g4occt_dd4hep_sources G4OCCT_STEPSolid.cc G4OCCT_STEPAssembly.cc
+                           G4OCCT_STEPAssembly_impl.cc G4OCCT_STEPAssemblySD.cc)
 set(_g4occt_dd4hep_libs G4OCCT::G4OCCT DD4hep::DDCore)
 
 if(TARGET DD4hep::DDG4)

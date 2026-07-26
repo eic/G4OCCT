@@ -92,11 +92,9 @@ add_test(NAME dd4hep_step_assembly COMMAND $<TARGET_FILE:test_dd4hep_plugins>
                                            --gtest_filter=STEPAssemblyTest.*)
 find_program(G4OCCT_DD4HEP_DDSIM_EXECUTABLE NAMES ddsim)
 if(G4OCCT_DD4HEP_DDSIM_EXECUTABLE)
-  add_test(
-    NAME ddsim_step_solid
-    COMMAND
-      ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --steeringFile
-      ${G4OCCT_STEP_SOLID_STEERING})
+  add_test(NAME ddsim_step_solid
+           COMMAND ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --steeringFile
+                   ${G4OCCT_STEP_SOLID_STEERING})
   add_test(
     NAME ddsim_step_assembly
     COMMAND
