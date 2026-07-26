@@ -13,6 +13,7 @@
 
 #include <TGeoShape.h>
 
+#include <cstdint>
 #include <memory>
 #include <limits>
 #include <string>

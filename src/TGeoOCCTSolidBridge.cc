@@ -12,7 +12,10 @@
 
 #include <atomic>
 #include <cstdint>
+#include <limits>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <unordered_map>
 

@@ -121,7 +121,7 @@ find_package(OpenCASCADE REQUIRED)
 option(BUILD_ROOT_TGEO_SUPPORT "Build public ROOT/TGeo solid adapter support"
        OFF)
 if(BUILD_ROOT_TGEO_SUPPORT)
-  find_package(ROOT CONFIG REQUIRED COMPONENTS Geom)
+  find_package(ROOT CONFIG REQUIRED COMPONENTS Geom Gpad)
 endif()
 
 # ─── RPATH ────────────────────────────────────────────────────────────────────

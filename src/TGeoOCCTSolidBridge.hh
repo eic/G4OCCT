@@ -8,6 +8,7 @@
 #define G4OCCT_src_TGeoOCCTSolidBridge_hh
 
 #include <array>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
