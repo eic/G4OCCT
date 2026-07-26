@@ -53,12 +53,12 @@ Double_t TGeoOCCTSolid::Capacity() const { return fBridge ? fBridge->CapacityCm3
 void TGeoOCCTSolid::ComputeBBox() {
   if (!fBridge) {
     Double_t origin[3] = {0.0, 0.0, 0.0};
-    fBBoxHelper        = std::make_unique<TGeoBBox>(GetName(), 0.0, 0.0, 0.0, origin);
+    fBBoxHelper        = std::make_unique<TGeoBBox>(0.0, 0.0, 0.0, origin);
     return;
   }
   const auto bounds  = fBridge->Bounds();
   Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
-  fBBoxHelper = std::make_unique<TGeoBBox>(GetName(), bounds.dx, bounds.dy, bounds.dz, origin);
+  fBBoxHelper = std::make_unique<TGeoBBox>(bounds.dx, bounds.dy, bounds.dz, origin);
 }
 
 void TGeoOCCTSolid::ComputeNormal(const Double_t* point, const Double_t* /*dir*/,
@@ -246,11 +246,11 @@ void TGeoOCCTSolid::EnsureBBoxHelper() const {
   if (!fBBoxHelper) {
     if (!fBridge) {
       Double_t origin[3] = {0.0, 0.0, 0.0};
-      fBBoxHelper        = std::make_unique<TGeoBBox>(GetName(), 0.0, 0.0, 0.0, origin);
+      fBBoxHelper        = std::make_unique<TGeoBBox>(0.0, 0.0, 0.0, origin);
     } else {
       const auto bounds  = fBridge->Bounds();
       Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
-      fBBoxHelper = std::make_unique<TGeoBBox>(GetName(), bounds.dx, bounds.dy, bounds.dz, origin);
+      fBBoxHelper = std::make_unique<TGeoBBox>(bounds.dx, bounds.dy, bounds.dz, origin);
     }
   }
 }
