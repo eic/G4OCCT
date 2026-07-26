@@ -66,8 +66,8 @@ namespace sim {
     std::string m_dumpGDML{};
 
   public:
-    G4OCCTDetectorGeometryConstruction(Geant4Context* ctxt, const std::string& nam)
-        : Geant4DetectorConstruction(ctxt, nam) {
+    G4OCCTDetectorGeometryConstruction(Geant4Context* ctxt, const std::string& name)
+        : Geant4DetectorConstruction(ctxt, name) {
       declareProperty("DebugMaterials", m_debugMaterials);
       declareProperty("DebugElements", m_debugElements);
       declareProperty("DebugShapes", m_debugShapes);
