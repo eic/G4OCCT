@@ -34,9 +34,7 @@ double ClampDistanceToStep(const double dist, const double step, const double in
 TGeoOCCTSolid::TGeoOCCTSolid() = default;
 
 TGeoOCCTSolid::TGeoOCCTSolid(const char* name, const TopoDS_Shape& shape)
-    : TGeoShape(name), fBridge(std::make_unique<g4occt::detail::TGeoOCCTSolidBridge>(shape)) {
-  ComputeBBox();
-}
+    : TGeoShape(name), fBridge(std::make_unique<g4occt::detail::TGeoOCCTSolidBridge>(shape)) {}
 
 TGeoOCCTSolid::~TGeoOCCTSolid() = default;
 
@@ -44,22 +42,12 @@ TGeoOCCTSolid* TGeoOCCTSolid::FromSTEP(const char* name, const std::string& path
   auto result = std::unique_ptr<TGeoOCCTSolid>(new TGeoOCCTSolid());
   result->SetName(name);
   result->fBridge = g4occt::detail::TGeoOCCTSolidBridge::FromSTEP(name, path);
-  result->ComputeBBox();
   return result.release();
 }
 
 Double_t TGeoOCCTSolid::Capacity() const { return fBridge ? fBridge->CapacityCm3() : 0.0; }
 
-void TGeoOCCTSolid::ComputeBBox() {
-  if (!fBridge) {
-    Double_t origin[3] = {0.0, 0.0, 0.0};
-    fBBoxHelper        = std::make_unique<TGeoBBox>(0.0, 0.0, 0.0, origin);
-    return;
-  }
-  const auto bounds  = fBridge->Bounds();
-  Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
-  fBBoxHelper        = std::make_unique<TGeoBBox>(bounds.dx, bounds.dy, bounds.dz, origin);
-}
+void TGeoOCCTSolid::ComputeBBox() {}
 
 void TGeoOCCTSolid::ComputeNormal(const Double_t* point, const Double_t* /*dir*/,
                                   Double_t* norm) const {
@@ -81,13 +69,13 @@ Bool_t TGeoOCCTSolid::Contains(const Double_t* point) const {
 }
 
 Bool_t TGeoOCCTSolid::CouldBeCrossed(const Double_t* point, const Double_t* dir) const {
-  EnsureBBoxHelper();
-  return fBBoxHelper->CouldBeCrossed(point, dir);
+  auto bbox = BuildBBoxHelper();
+  return bbox.CouldBeCrossed(point, dir);
 }
 
 Int_t TGeoOCCTSolid::DistancetoPrimitive(Int_t px, Int_t py) {
-  EnsureBBoxHelper();
-  return fBBoxHelper->DistancetoPrimitive(px, py);
+  auto bbox = BuildBBoxHelper();
+  return bbox.DistancetoPrimitive(px, py);
 }
 
 Double_t TGeoOCCTSolid::DistFromInside(const Double_t* point, const Double_t* dir, Int_t /*iact*/,
@@ -115,18 +103,18 @@ TGeoVolume* TGeoOCCTSolid::Divide(TGeoVolume* /*voldiv*/, const char* /*divname*
 }
 
 const char* TGeoOCCTSolid::GetAxisName(Int_t iaxis) const {
-  EnsureBBoxHelper();
-  return fBBoxHelper->GetAxisName(iaxis);
+  auto bbox = BuildBBoxHelper();
+  return bbox.GetAxisName(iaxis);
 }
 
 Double_t TGeoOCCTSolid::GetAxisRange(Int_t iaxis, Double_t& xlo, Double_t& xhi) const {
-  EnsureBBoxHelper();
-  return fBBoxHelper->GetAxisRange(iaxis, xlo, xhi);
+  auto bbox = BuildBBoxHelper();
+  return bbox.GetAxisRange(iaxis, xlo, xhi);
 }
 
 void TGeoOCCTSolid::GetBoundingCylinder(Double_t* param) const {
-  EnsureBBoxHelper();
-  fBBoxHelper->GetBoundingCylinder(param);
+  auto bbox = BuildBBoxHelper();
+  bbox.GetBoundingCylinder(param);
 }
 
 const TBuffer3D& TGeoOCCTSolid::GetBuffer3D(Int_t reqSections, Bool_t localFrame) const {
@@ -143,8 +131,8 @@ Bool_t TGeoOCCTSolid::GetPointsOnSegments(Int_t npoints, Double_t* array) const 
 
 Int_t TGeoOCCTSolid::GetFittingBox(const TGeoBBox* parambox, TGeoMatrix* mat, Double_t& dx,
                                    Double_t& dy, Double_t& dz) const {
-  EnsureBBoxHelper();
-  return fBBoxHelper->GetFittingBox(parambox, mat, dx, dy, dz);
+  auto bbox = BuildBBoxHelper();
+  return bbox.GetFittingBox(parambox, mat, dx, dy, dz);
 }
 
 void TGeoOCCTSolid::GetMeshNumbers(Int_t& nvert, Int_t& nsegs, Int_t& npols) const {
@@ -164,8 +152,8 @@ TGeoShape* TGeoOCCTSolid::GetMakeRuntimeShape(TGeoShape* /*mother*/, TGeoMatrix*
 Bool_t TGeoOCCTSolid::IsCylType() const { return kFALSE; }
 
 Bool_t TGeoOCCTSolid::IsValidBox() const {
-  EnsureBBoxHelper();
-  return fBBoxHelper->IsValidBox();
+  auto bbox = BuildBBoxHelper();
+  return bbox.IsValidBox();
 }
 
 void TGeoOCCTSolid::InspectShape() const {
@@ -198,9 +186,6 @@ Double_t TGeoOCCTSolid::Safety(const Double_t* point, Bool_t in) const {
 void TGeoOCCTSolid::SetDimensions(Double_t* /*param*/) {
   Error("SetDimensions",
         "TGeoOCCTSolid does not support parameterized dimension mutation; use SetOCCTShape");
-  if (fBridge) {
-    ComputeBBox();
-  }
 }
 
 void TGeoOCCTSolid::SetPoints(Double_t* points) const {
@@ -239,20 +224,16 @@ void TGeoOCCTSolid::SetOCCTShape(const TopoDS_Shape& shape) {
   }
   fDisplayHelper.reset();
   fDisplayGeneration = std::numeric_limits<std::uint64_t>::max();
-  ComputeBBox();
 }
 
-void TGeoOCCTSolid::EnsureBBoxHelper() const {
-  if (!fBBoxHelper) {
-    if (!fBridge) {
-      Double_t origin[3] = {0.0, 0.0, 0.0};
-      fBBoxHelper        = std::make_unique<TGeoBBox>(0.0, 0.0, 0.0, origin);
-    } else {
-      const auto bounds  = fBridge->Bounds();
-      Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
-      fBBoxHelper        = std::make_unique<TGeoBBox>(bounds.dx, bounds.dy, bounds.dz, origin);
-    }
+TGeoBBox TGeoOCCTSolid::BuildBBoxHelper() const {
+  if (!fBridge) {
+    Double_t origin[3] = {0.0, 0.0, 0.0};
+    return TGeoBBox(0.0, 0.0, 0.0, origin);
   }
+  const auto bounds  = fBridge->Bounds();
+  Double_t origin[3] = {bounds.origin[0], bounds.origin[1], bounds.origin[2]};
+  return TGeoBBox(bounds.dx, bounds.dy, bounds.dz, origin);
 }
 
 void TGeoOCCTSolid::EnsureDisplayHelper() const {
