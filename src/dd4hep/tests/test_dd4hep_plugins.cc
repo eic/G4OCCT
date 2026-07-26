@@ -18,7 +18,8 @@
 #include <DD4hep/Detector.h>
 #include <DD4hep/DetElement.h>
 #include <DD4hep/Volumes.h>
-#include <TGeoTessellated.h>
+
+#include "G4OCCT/TGeoOCCTSolid.hh"
 
 #include <dlfcn.h>
 
@@ -118,15 +119,13 @@ TEST_F(STEPSolidTest, MaterialAssignment) {
   EXPECT_TRUE(vol.material().isValid()) << "Volume material is invalid";
 }
 
-/// Verify that the TessellatedSolid's bounding-box half-extents are in
-/// DD4hep/ROOT native units (cm), not in OCCT native units (mm).
+/// Verify that the exact TGeoOCCTSolid shape is used and geometric queries use
+/// DD4hep/ROOT native units (cm), not OCCT native units (mm).
 ///
 /// The STEP fixture is the box-20x30x40-v1 shape: a 20 × 30 × 40 mm box
-/// centred at the origin.  In ROOT/TGeo/DD4hep units (cm) the bounding-box
-/// half-extents must be 1.0 × 1.5 × 2.0 cm.  If the mm → cm unit conversion
-/// is absent (the regression this test guards against), the half-extents
-/// appear as 10.0 × 15.0 × 20.0 — a factor of ten too large.
-TEST_F(STEPSolidTest, TessellatedSolidBoundsInCm) {
+/// centred at the origin.  If cm↔mm conversion were missing, containment and
+/// distance queries at O(1 cm) scales would be wrong by a factor of ten.
+TEST_F(STEPSolidTest, ExactSolidUnitsInCm) {
   ASSERT_NO_THROW(LoadCompact(G4OCCT_COMPACT_STEP_SOLID));
   dd4hep::Detector& det = dd4hep::Detector::getInstance();
 
@@ -137,17 +136,29 @@ TEST_F(STEPSolidTest, TessellatedSolidBoundsInCm) {
   dd4hep::Volume vol = it->second.placement().volume();
   ASSERT_TRUE(vol.isValid());
 
-  auto* tess = dynamic_cast<TGeoTessellated*>(vol.solid().ptr());
-  ASSERT_NE(tess, nullptr) << "Volume solid is not a TGeoTessellated";
+  auto* solid = dynamic_cast<TGeoOCCTSolid*>(vol.solid().ptr());
+  ASSERT_NE(solid, nullptr) << "Volume solid is not a TGeoOCCTSolid";
 
-  // Expected half-extents in cm.  The fixture box is 20 × 30 × 40 mm, so
-  // half-extents are 10 × 15 × 20 mm = 1.0 × 1.5 × 2.0 cm.
-  // For a box (flat faces) the tessellation vertices sit exactly at the
-  // corners, so floating-point error is negligible; 2 % tolerance is ample.
-  constexpr double kRelTol = 0.02;
-  EXPECT_NEAR(tess->GetDX(), 1.0, 1.0 * kRelTol) << "X half-extent should be 1.0 cm (10 mm)";
-  EXPECT_NEAR(tess->GetDY(), 1.5, 1.5 * kRelTol) << "Y half-extent should be 1.5 cm (15 mm)";
-  EXPECT_NEAR(tess->GetDZ(), 2.0, 2.0 * kRelTol) << "Z half-extent should be 2.0 cm (20 mm)";
+  const Double_t centre[3]    = {0.0, 0.0, 0.0};
+  const Double_t outsideX[3]  = {1.1, 0.0, 0.0};
+  const Double_t outsideY[3]  = {0.0, 1.6, 0.0};
+  const Double_t outsideZ[3]  = {0.0, 0.0, 2.1};
+  const Double_t minusXDir[3] = {-1.0, 0.0, 0.0};
+  const Double_t minusYDir[3] = {0.0, -1.0, 0.0};
+  const Double_t minusZDir[3] = {0.0, 0.0, -1.0};
+  constexpr double kDistTolCm = 1e-3;
+
+  EXPECT_TRUE(solid->Contains(centre));
+  EXPECT_FALSE(solid->Contains(outsideX));
+  EXPECT_FALSE(solid->Contains(outsideY));
+  EXPECT_FALSE(solid->Contains(outsideZ));
+
+  EXPECT_NEAR(solid->DistFromOutside(outsideX, minusXDir), 0.1, kDistTolCm)
+      << "Expected 0.1 cm entry distance from x=1.1 cm to x=1.0 cm face";
+  EXPECT_NEAR(solid->DistFromOutside(outsideY, minusYDir), 0.1, kDistTolCm)
+      << "Expected 0.1 cm entry distance from y=1.6 cm to y=1.5 cm face";
+  EXPECT_NEAR(solid->DistFromOutside(outsideZ, minusZDir), 0.1, kDistTolCm)
+      << "Expected 0.1 cm entry distance from z=2.1 cm to z=2.0 cm face";
 }
 
 // ── STEPAssembly tests ────────────────────────────────────────────────────────

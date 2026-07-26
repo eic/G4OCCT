@@ -4,8 +4,9 @@
 /// @file G4OCCT_STEPAssembly_impl.hh
 /// @brief Firewall bridge between the DD4hep plugin TU and G4OCCT/OCCT.
 ///
-/// See G4OCCT_STEPSolid_impl.hh for a full explanation of the Printf
-/// return-type collision that makes this firewall necessary.
+/// The DD4hep/ROOT headers and OCCT headers cannot be included together in one
+/// translation unit due to the ROOT-vs-OCCT Printf return-type collision and
+/// Handle macro interactions, so this bridge keeps the include worlds separate.
 ///
 /// This header must not pull in either DD4hep/ROOT or G4OCCT/OCCT.
 
