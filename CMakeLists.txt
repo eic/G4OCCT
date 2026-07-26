@@ -265,6 +265,10 @@ option(BUILD_DD4HEP_PLUGIN
        "Build DD4hep detector element plugins (requires DD4hep)" OFF)
 
 if(BUILD_DD4HEP_PLUGIN)
+  if(NOT BUILD_ROOT_TGEO_SUPPORT)
+    message(FATAL_ERROR "BUILD_DD4HEP_PLUGIN=ON requires BUILD_ROOT_TGEO_SUPPORT=ON "
+                        "because G4OCCT_STEPSolid uses TGeoOCCTSolid.")
+  endif()
   if(NOT DD4hep_FOUND)
     find_package(DD4hep QUIET)
   endif()

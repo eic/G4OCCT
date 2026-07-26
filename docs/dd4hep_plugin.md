@@ -114,8 +114,9 @@ via the `DECLARE_DETELEMENT` macro.
 
 ### 3.1 `G4OCCT_STEPSolid` — Single solid from a STEP file
 
-**Purpose:** Import a STEP file containing a single solid shape, wrap it as a
-`dd4hep::Solid`, and place it as a `dd4hep::DetElement`.
+**Purpose:** Import a STEP file containing a single solid shape, wrap it as an
+exact `TGeoOCCTSolid`-backed `dd4hep::Solid`, and place it as a
+`dd4hep::DetElement`.
 
 **Compact XML:**
 
@@ -134,10 +135,11 @@ via the `DECLARE_DETELEMENT` macro.
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2026 G4OCCT Contributors
 
-#include <stdexcept>
 #include <DD4hep/DetFactoryHelper.h>
 #include <DD4hep/Printout.h>
-#include "G4OCCT/G4OCCTSolid.hh"
+#include "G4OCCT/TGeoOCCTSolid.hh"
+
+#include <stdexcept>
 
 using namespace dd4hep;
 
@@ -153,10 +155,10 @@ static Ref_t create_detector(Detector& description, xml_h e,
   std::string name = x_det.nameStr();
   std::string path = x_step.attr<std::string>(_Unicode(path));
 
-  // Import the STEP solid via G4OCCT. FromSTEP throws on failure.
-  G4OCCTSolid* g4solid = nullptr;
+  // Import the STEP solid via the exact ROOT/TGeo adapter.
+  TGeoOCCTSolid* solid = nullptr;
   try {
-    g4solid = G4OCCTSolid::FromSTEP(name, path);
+    solid = TGeoOCCTSolid::FromSTEP(name.c_str(), path);
   } catch (const std::exception& ex) {
     throw std::runtime_error("G4OCCT_STEPSolid: failed to import " + path +
                              " (" + ex.what() + ")");
@@ -164,7 +166,7 @@ static Ref_t create_detector(Detector& description, xml_h e,
 
   // Wrap in DD4hep constructs
   Material   mat = description.material(x_mat.attr<std::string>(_Unicode(name)));
-  Volume     vol(name, Solid(g4solid), mat);
+  Volume     vol(name, Solid(solid), mat);
   vol.setVisAttributes(description, x_det.visStr());
 
   DetElement det(name, x_det.id());

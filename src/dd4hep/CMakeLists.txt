@@ -135,7 +135,6 @@ dd4hep_add_plugin(
   G4OCCTDD4hep
   SOURCES
   G4OCCT_STEPSolid.cc
-  G4OCCT_STEPSolid_impl.cc
   G4OCCT_STEPAssembly.cc
   G4OCCT_STEPAssembly_impl.cc
   G4OCCT_STEPAssemblySD.cc)

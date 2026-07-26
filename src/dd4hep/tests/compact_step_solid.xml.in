@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 <!-- Copyright (C) 2026 G4OCCT Contributors -->
 <!--
-  Minimal DD4hep compact file for testing G4OCCT_STEPSolid.
+  Minimal DD4hep compact file for testing G4OCCT_STEPSolid with exact
+  TGeoOCCTSolid geometry.
   @G4OCCT_STEP_SOLID_PATH@ is substituted by CMake configure_file() with the
   absolute path to the box-20x30x40-v1 STEP fixture from the test suite.
 -->
@@ -12,7 +13,7 @@
         url="https://github.com/eic/G4OCCT"
         status="testing"
         version="1.0">
-    <comment>Minimal geometry for testing the G4OCCT_STEPSolid DD4hep plugin.</comment>
+    <comment>Minimal geometry for testing the exact-shape G4OCCT_STEPSolid DD4hep plugin.</comment>
   </info>
 
   <define>
