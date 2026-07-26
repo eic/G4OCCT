@@ -144,6 +144,21 @@ if(BUILD_ROOT_TGEO_SUPPORT)
                                  PRIVATE ${ROOT_INCLUDE_DIRS})
     endif()
   endif()
+
+  # ─── test_tgeo_to_g4_conversion ────────────────────────────────────────────
+  # Regression test for the TGeoOCCTSolid → G4OCCTSolid conversion path that
+  # G4OCCTGeant4Converter::handleSolid executes during ddsim.  Verifies that
+  # the produced Geant4 solid carries entity type "G4OCCTSolid" (not a
+  # tessellated fallback) and that geometry queries use Geant4 mm units.
+  g4occt_gtest(test_tgeo_to_g4_conversion test_tgeo_to_g4_conversion.cc
+               LINK_LIBRARIES G4OCCT ${_g4occt_root_tgeo_test_libs})
+  target_compile_definitions(
+    test_tgeo_to_g4_conversion
+    PRIVATE G4OCCT_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  if(NOT TARGET ROOT::Geom)
+    target_include_directories(test_tgeo_to_g4_conversion
+                               PRIVATE ${ROOT_INCLUDE_DIRS})
+  endif()
 endif()
 
 # ─── test_geometry_validation ────────────────────────────────────────────────
