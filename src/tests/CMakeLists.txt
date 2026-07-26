@@ -124,7 +124,8 @@ if(BUILD_ROOT_TGEO_SUPPORT)
   if(TARGET ROOT::Gpad)
     target_link_libraries(test_tgeo_occt_solid PRIVATE ROOT::Gpad)
   elseif(ROOT_LIBRARIES)
-    # Fallback for ROOT configs that provide classic ROOT_LIBRARIES without ROOT::Gpad.
+    # Fallback for ROOT configs that provide classic ROOT_LIBRARIES without
+    # ROOT::Gpad.
     target_link_libraries(test_tgeo_occt_solid PRIVATE ${ROOT_LIBRARIES})
   endif()
   if(NOT TARGET ROOT::Geom)
