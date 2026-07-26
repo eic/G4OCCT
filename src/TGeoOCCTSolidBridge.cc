@@ -12,7 +12,9 @@
 
 #include <atomic>
 #include <cstdint>
+#include <limits>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -107,6 +109,9 @@ public:
   const std::uint64_t cacheKey;
   std::shared_ptr<const void> cacheLifetime;
   G4OCCTSolidKernel kernel;
+  mutable std::shared_ptr<const DisplayMeshCm> displayMesh;
+  mutable std::uint64_t displayMeshGeneration{std::numeric_limits<std::uint64_t>::max()};
+  mutable std::mutex displayMeshMutex;
 };
 
 double TGeoOCCTSolidBridge::InfinityCm() { return G4OCCTSolidKernel::Infinity() * kMmToCm; }
@@ -155,6 +160,46 @@ TGeoOCCTSolidBridge::BoundsCm TGeoOCCTSolidBridge::Bounds() const {
       .dz     = half_mm.z() * kMmToCm,
       .origin = {center_mm.x() * kMmToCm, center_mm.y() * kMmToCm, center_mm.z() * kMmToCm},
   };
+}
+
+std::shared_ptr<const TGeoOCCTSolidBridge::DisplayMeshCm> TGeoOCCTSolidBridge::DisplayMesh() const {
+  for (;;) {
+    const std::uint64_t generationToBuild = fImpl->kernel.ShapeGeneration();
+    {
+      std::unique_lock<std::mutex> lock(fImpl->displayMeshMutex);
+      if (fImpl->displayMesh && fImpl->displayMeshGeneration == generationToBuild) {
+        return fImpl->displayMesh;
+      }
+    }
+
+    DisplayMeshCm mesh;
+    const auto& surfaceCache = fImpl->kernel.GetOrBuildSurfaceCache();
+    mesh.triangles.reserve(surfaceCache.triangles.size());
+    for (const auto& tri : surfaceCache.triangles) {
+      mesh.triangles.push_back(DisplayTriangleCm{
+          .p1 = {tri.p1.x() * kMmToCm, tri.p1.y() * kMmToCm, tri.p1.z() * kMmToCm},
+          .p2 = {tri.p2.x() * kMmToCm, tri.p2.y() * kMmToCm, tri.p2.z() * kMmToCm},
+          .p3 = {tri.p3.x() * kMmToCm, tri.p3.y() * kMmToCm, tri.p3.z() * kMmToCm},
+      });
+    }
+    auto builtMesh = std::make_shared<DisplayMeshCm>(std::move(mesh));
+
+    std::unique_lock<std::mutex> lock(fImpl->displayMeshMutex);
+    const std::uint64_t currentGeneration = fImpl->kernel.ShapeGeneration();
+    if (fImpl->displayMesh && fImpl->displayMeshGeneration == currentGeneration) {
+      return fImpl->displayMesh;
+    }
+    if (currentGeneration != generationToBuild) {
+      continue;
+    }
+    fImpl->displayMesh           = std::move(builtMesh);
+    fImpl->displayMeshGeneration = currentGeneration;
+    return fImpl->displayMesh;
+  }
+}
+
+std::uint64_t TGeoOCCTSolidBridge::ShapeGeneration() const {
+  return fImpl->kernel.ShapeGeneration();
 }
 
 double TGeoOCCTSolidBridge::CapacityCm3() const {
