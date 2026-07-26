@@ -123,6 +123,9 @@ if(BUILD_ROOT_TGEO_SUPPORT)
     PRIVATE G4OCCT_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
   if(TARGET ROOT::Gpad)
     target_link_libraries(test_tgeo_occt_solid PRIVATE ROOT::Gpad)
+  elseif(ROOT_LIBRARIES)
+    # Fallback for ROOT configs that provide classic ROOT_LIBRARIES without ROOT::Gpad.
+    target_link_libraries(test_tgeo_occt_solid PRIVATE ${ROOT_LIBRARIES})
   endif()
   if(NOT TARGET ROOT::Geom)
     target_include_directories(test_tgeo_occt_solid
