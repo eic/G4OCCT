@@ -21,7 +21,6 @@ def _construct_geometry_with_exact_g4occt(self, kernel, geant4, geoPrintLevel=2,
   act.PrintSensitives = self.enablePrintSensitives
   act.GeoInfoPrintLevel = geoPrintLevel
   act.DumpHierarchy = self.dumpHierarchy
-  act.DumpGDML = self.dumpGDML
 
   sensitives = DetectorConstruction(kernel, str("Geant4DetectorSensitivesConstruction/ConstructSD"))
   sensitives.enableUI()

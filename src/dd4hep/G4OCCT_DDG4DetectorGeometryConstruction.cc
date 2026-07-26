@@ -19,6 +19,8 @@
 #include "G4OCCT/G4OCCTSolid.hh"
 #include "G4OCCT/TGeoOCCTSolid.hh"
 
+#include <string>
+
 namespace dd4hep {
 namespace sim {
 
@@ -63,7 +65,6 @@ namespace sim {
     bool m_printSensitives{false};
 
     int m_geoInfoPrintLevel{DEBUG};
-    std::string m_dumpGDML{};
 
   public:
     G4OCCTDetectorGeometryConstruction(Geant4Context* ctxt, const std::string& name)
@@ -83,7 +84,6 @@ namespace sim {
       declareProperty("PrintSensitives", m_printSensitives);
       declareProperty("GeoInfoPrintLevel", m_geoInfoPrintLevel);
       declareProperty("DumpHierarchy", m_dumpHierarchy);
-      declareProperty("DumpGDML", m_dumpGDML);
     }
 
     void constructGeo(Geant4DetectorConstructionContext* ctxt) override {
@@ -104,7 +104,7 @@ namespace sim {
       conv.printSensitives  = m_printSensitives;
 
       ctxt->geometry             = conv.create(world).detach();
-      ctxt->geometry->printLevel = outputLevel();
+      ctxt->geometry->printLevel = static_cast<PrintLevel>(m_geoInfoPrintLevel);
       g4map.attach(ctxt->geometry);
 
       G4VPhysicalVolume* w = ctxt->geometry->world();
