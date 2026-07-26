@@ -151,7 +151,7 @@ if(BUILD_ROOT_TGEO_SUPPORT)
   # produced Geant4 solid carries entity type "G4OCCTSolid" (not a tessellated
   # fallback) and that geometry queries use Geant4 mm units.
   g4occt_gtest(test_tgeo_to_g4_conversion test_tgeo_to_g4_conversion.cc
-               LINK_LIBRARIES G4OCCT ${_g4occt_root_tgeo_test_libs})
+               LINK_LIBRARIES ${_g4occt_root_tgeo_test_libs})
   target_compile_definitions(
     test_tgeo_to_g4_conversion
     PRIVATE G4OCCT_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")

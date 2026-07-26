@@ -28,12 +28,13 @@
 
 #include <filesystem>
 #include <memory>
+#include <string>
 
 namespace {
 
-/// Absolute path to the box-20×30×40 mm STEP fixture (20 mm half-x,
-/// 15 mm half-y, 20 mm half-z → ±1 cm, ±1.5 cm, ±2 cm in ROOT cm units,
-/// ±10 mm, ±15 mm, ±20 mm in Geant4 mm units).
+/// Absolute path to the box-20×30×40 mm STEP fixture (half-extents 10, 15,
+/// 20 mm → ±1 cm, ±1.5 cm, ±2 cm in ROOT cm units, ±10 mm, ±15 mm, ±20 mm
+/// in Geant4 mm units).
 std::string BoxStepPath() {
   return (std::filesystem::path(G4OCCT_TEST_SOURCE_DIR) / "fixtures" / "geometry" /
           "direct-primitives" / "G4Box" / "box-20x30x40-v1" / "shape.step")
