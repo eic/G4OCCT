@@ -16,6 +16,8 @@ set(G4OCCT_STEP_SOLID_COMPACT
     "${CMAKE_CURRENT_BINARY_DIR}/compact_step_solid.xml")
 set(G4OCCT_STEP_ASSEMBLY_COMPACT
     "${CMAKE_CURRENT_BINARY_DIR}/compact_step_assembly.xml")
+set(G4OCCT_STEP_SOLID_STEERING
+    "${CMAKE_CURRENT_BINARY_DIR}/steer_step_solid_exact.py")
 
 # ── DD4hep standard elements file ────────────────────────────────────────────
 #
@@ -47,6 +49,8 @@ message(STATUS "G4OCCT DD4hep elements: ${G4OCCT_DD4HEP_ELEMENTS_XML}")
 # Generate compact XML files with the absolute fixture paths substituted in.
 configure_file(compact_step_solid.xml.in "${G4OCCT_STEP_SOLID_COMPACT}" @ONLY)
 configure_file(compact_step_assembly.xml.in "${G4OCCT_STEP_ASSEMBLY_COMPACT}"
+               @ONLY)
+configure_file(steer_step_solid_exact.py.in "${G4OCCT_STEP_SOLID_STEERING}"
                @ONLY)
 
 # ── test_dd4hep_plugins ───────────────────────────────────────────────────────
@@ -88,13 +92,9 @@ add_test(NAME dd4hep_step_assembly COMMAND $<TARGET_FILE:test_dd4hep_plugins>
                                            --gtest_filter=STEPAssemblyTest.*)
 find_program(G4OCCT_DD4HEP_DDSIM_EXECUTABLE NAMES ddsim)
 if(G4OCCT_DD4HEP_DDSIM_EXECUTABLE)
-  add_test(
-    NAME ddsim_step_solid
-    COMMAND
-      ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --compactFile
-      ${G4OCCT_STEP_SOLID_COMPACT} --runType batch --enableGun --gun.particle
-      geantino --gun.energy 1*GeV --numberOfEvents 1 --outputFile
-      ${CMAKE_CURRENT_BINARY_DIR}/ddsim_step_solid.edm4hep.root)
+  add_test(NAME ddsim_step_solid
+           COMMAND ${G4OCCT_DD4HEP_DDSIM_EXECUTABLE} --steeringFile
+                   ${G4OCCT_STEP_SOLID_STEERING})
   add_test(
     NAME ddsim_step_assembly
     COMMAND

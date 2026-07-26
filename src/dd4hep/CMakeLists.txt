@@ -131,11 +131,18 @@ if(USE_ASAN
   endfunction()
 endif()
 
-dd4hep_add_plugin(
-  G4OCCTDD4hep SOURCES G4OCCT_STEPSolid.cc G4OCCT_STEPAssembly.cc
-  G4OCCT_STEPAssembly_impl.cc G4OCCT_STEPAssemblySD.cc)
+set(_g4occt_dd4hep_sources G4OCCT_STEPSolid.cc G4OCCT_STEPAssembly.cc
+                           G4OCCT_STEPAssembly_impl.cc G4OCCT_STEPAssemblySD.cc)
+set(_g4occt_dd4hep_libs G4OCCT::G4OCCT DD4hep::DDCore)
 
-target_link_libraries(G4OCCTDD4hep PRIVATE G4OCCT::G4OCCT DD4hep::DDCore)
+if(TARGET DD4hep::DDG4)
+  list(APPEND _g4occt_dd4hep_sources G4OCCT_DDG4DetectorGeometryConstruction.cc)
+  list(APPEND _g4occt_dd4hep_libs DD4hep::DDG4)
+endif()
+
+dd4hep_add_plugin(G4OCCTDD4hep SOURCES ${_g4occt_dd4hep_sources})
+
+target_link_libraries(G4OCCTDD4hep PRIVATE ${_g4occt_dd4hep_libs})
 
 # ─── Tests ────────────────────────────────────────────────────────────────────
 
