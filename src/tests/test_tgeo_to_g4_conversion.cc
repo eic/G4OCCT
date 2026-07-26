@@ -47,8 +47,7 @@ std::string BoxStepPath() {
 /// This is the exact conversion that must stay alive for the non-tessellated
 /// DD4hep path to work.
 std::unique_ptr<G4OCCTSolid> MakeG4SolidFromTGeoOCCTSolid() {
-  std::unique_ptr<TGeoOCCTSolid> tgeoSolid(
-      TGeoOCCTSolid::FromSTEP("box_tgeo", BoxStepPath()));
+  std::unique_ptr<TGeoOCCTSolid> tgeoSolid(TGeoOCCTSolid::FromSTEP("box_tgeo", BoxStepPath()));
   // GetOCCTShape() returns const TopoDS_Shape& — no OCCT header needed to pass
   // the reference through.
   return std::make_unique<G4OCCTSolid>("box_g4", tgeoSolid->GetOCCTShape());
@@ -101,8 +100,7 @@ TEST(TGeoToG4Conversion, DistanceToInRayUsesMmUnits) {
   constexpr double kTolMm = 1e-3;
 
   const G4double dist = g4Solid->DistanceToIn(outsideX, minusX);
-  EXPECT_NEAR(dist, 10.0, kTolMm)
-      << "Expected 10 mm entry distance from x=20 mm to x=10 mm face";
+  EXPECT_NEAR(dist, 10.0, kTolMm) << "Expected 10 mm entry distance from x=20 mm to x=10 mm face";
 }
 
 /// Verify DistanceToOut (ray) returns correct results in Geant4 mm units.
@@ -118,8 +116,7 @@ TEST(TGeoToG4Conversion, DistanceToOutRayUsesMmUnits) {
   constexpr double kTolMm = 1e-3;
 
   const G4double dist = g4Solid->DistanceToOut(origin, plusX);
-  EXPECT_NEAR(dist, 10.0, kTolMm)
-      << "Expected 10 mm exit distance from origin to x=10 mm face";
+  EXPECT_NEAR(dist, 10.0, kTolMm) << "Expected 10 mm exit distance from origin to x=10 mm face";
 }
 
 /// Verify that the entity type of a fresh G4OCCTSolid loaded directly from
