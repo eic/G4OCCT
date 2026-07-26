@@ -182,6 +182,22 @@ static Ref_t create_detector(Detector& description, xml_h e,
 DECLARE_DETELEMENT(G4OCCT_STEPSolid, create_detector)
 ```
 
+### 3.1.1 DD4hep → DDG4 Geant4 handoff for exact solids
+
+DD4hep's default `Geant4Converter::handleSolid` does not know about
+`TGeoOCCTSolid`, so the exact path requires a DDG4-side handoff override.
+G4OCCT provides `G4OCCTDetectorGeometryConstruction` (in
+`src/dd4hep/G4OCCT_DDG4DetectorGeometryConstruction.cc`), which swaps in a
+`G4OCCTGeant4Converter` override:
+
+- when the TGeo shape is `TGeoOCCTSolid`, construct `G4OCCTSolid` directly
+  from the embedded `TopoDS_Shape`
+- cache the resulting `G4VSolid*` in the standard DDG4 geometry map
+- fall back to the base DDG4 converter for all other shape types
+
+This is the exact handoff point from DD4hep/TGeo to Geant4 geometry for the
+STEP-solid plugin path.
+
 ### 3.2 `G4OCCT_STEPAssembly` — Multi-shape STEP assembly
 
 **Purpose:** Import a STEP file containing a multi-part assembly, apply a
