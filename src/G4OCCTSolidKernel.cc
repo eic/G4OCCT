@@ -91,7 +91,6 @@ public:
     myDir        = theDir;
     myTolerance  = theTolerance;
     myCrossings  = 0;
-    myOnSurface  = Standard_False;
     myDegenerate = Standard_False;
   }
 
@@ -152,10 +151,6 @@ public:
       return Standard_False;
     }
     const Standard_Real t = f * edge2.Dot(q);
-    if (std::abs(t) <= myTolerance) {
-      myOnSurface = Standard_True;
-      return Standard_True;
-    }
     if (t < -myTolerance) {
       return Standard_False;
     }
@@ -171,7 +166,6 @@ public:
   Standard_Boolean Stop() const override { return Standard_False; }
 
   int Crossings() const { return myCrossings; }
-  Standard_Boolean OnSurface() const { return myOnSurface; }
   Standard_Boolean Degenerate() const { return myDegenerate; }
 
 private:
@@ -179,7 +173,6 @@ private:
   BVH_Vec3d myDir;
   Standard_Real myTolerance{1e-7};
   int myCrossings{0};
-  Standard_Boolean myOnSurface{Standard_False};
   Standard_Boolean myDegenerate{Standard_False};
 };
 
@@ -732,9 +725,6 @@ G4OCCTSolidKernel::ClassifyPoint(const G4ThreeVector& p, ClassifierCache& classi
     caster.SetRay(bvhOrigin, BVH_Vec3d(0.0, 0.0, 1.0), bvhTol);
     caster.Select();
 
-    if (caster.OnSurface()) {
-      return PointClassification::kSurface;
-    }
     if (!caster.Degenerate() && caster.Crossings() > 0) {
       return (caster.Crossings() % 2 == 1) ? PointClassification::kInside
                                            : PointClassification::kOutside;
@@ -760,9 +750,6 @@ G4OCCTSolidKernel::ClassifyPoint(const G4ThreeVector& p, ClassifierCache& classi
     for (const BVH_Vec3d& dir : kExtraRays) {
       caster.SetRay(bvhOrigin, dir, bvhTol);
       caster.Select();
-      if (caster.OnSurface()) {
-        return PointClassification::kSurface;
-      }
       if (!caster.Degenerate()) {
         if (caster.Crossings() % 2 == 1) {
           ++insideVotes;
