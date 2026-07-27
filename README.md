@@ -121,20 +121,47 @@ G4OCCT/
 ├── cmake/
 │   └── G4OCCTConfig.cmake.in
 ├── include/G4OCCT/
-│   ├── G4OCCTSolid.hh      # G4VSolid wrapping TopoDS_Shape
+│   ├── G4OCCTSolid.hh                       # G4VSolid wrapping TopoDS_Shape
 │   ├── G4OCCTLogicalVolume.hh
-│   └── G4OCCTPlacement.hh  # G4PVPlacement + TopLoc_Location
+│   ├── G4OCCTPlacement.hh                   # G4PVPlacement + TopLoc_Location
+│   ├── G4OCCTAssemblyVolume.hh              # multi-shape STEP assembly (XDE import)
+│   ├── G4OCCTAssemblyRegistry.hh            # singleton registry for plugin workflows
+│   ├── G4OCCTMaterialMap.hh                 # STEP material name → G4Material* map
+│   ├── G4OCCTMaterialMapReader.hh           # XML material map file reader
+│   ├── G4OCCTSensitiveDetectorMap.hh        # volume name → G4VSensitiveDetector* map
+│   ├── G4OCCTSensitiveDetectorMapReader.hh  # XML sensitive detector map reader
+│   └── TGeoOCCTSolid.hh                     # ROOT/TGeo adapter (BUILD_ROOT_TGEO_SUPPORT)
 ├── src/
 │   ├── G4OCCTSolid.cc
+│   ├── G4OCCTSolidKernel.cc / .hh           # shared multi-tier navigation kernel
 │   ├── G4OCCTLogicalVolume.cc
 │   ├── G4OCCTPlacement.cc
-│   ├── tests/              # CTest-integrated unit tests
-│   └── benchmarks/         # Geantino navigator benchmarks
+│   ├── G4OCCTAssemblyVolume.cc
+│   ├── G4OCCTAssemblyRegistry.cc
+│   ├── G4OCCTMaterialMap.cc
+│   ├── G4OCCTMaterialMapReader.cc
+│   ├── G4OCCTSensitiveDetectorMap.cc
+│   ├── G4OCCTSensitiveDetectorMapReader.cc
+│   ├── TGeoOCCTSolid.cc / TGeoOCCTSolidBridge.cc
+│   ├── app/g4occt/                          # standalone g4occt interactive application
+│   ├── examples/                            # usage examples
+│   │   ├── B1/                              # water phantom example
+│   │   ├── B4c/                             # sampling calorimeter example
+│   │   └── DD4hepSimpleDetector/            # DD4hep STEP-backed VXD layer
+│   ├── dd4hep/                              # optional DD4hep detector element plugins
+│   │   ├── G4OCCT_STEPSolid.cc
+│   │   ├── G4OCCT_STEPAssembly.cc
+│   │   └── G4OCCT_STEPAssemblySD.cc
+│   ├── tests/                               # CTest-integrated unit tests
+│   └── benchmarks/                          # geantino navigator benchmarks
 └── docs/
-    ├── goals.md            # Project goals and design philosophy
+    ├── goals.md            # Project goals, design philosophy, and roadmap
     ├── geometry_mapping.md # Geant4 ↔ OCCT class correspondence
     ├── solid_navigation.md # G4VSolid ↔ OCCT algorithm mapping
-    └── material_bridging.md
+    ├── material_bridging.md
+    ├── step_assembly_import.md
+    ├── dd4hep_plugin.md
+    └── performance.md
 ```
 
 ---
@@ -152,8 +179,20 @@ including:
   Correspondence between Geant4 and OCCT class hierarchies.
 - [Solid Navigation Design](https://eic.github.io/G4OCCT/#/solid_navigation) —
   Per-function mapping of `G4VSolid` queries to OCCT algorithms.
+- [Performance Considerations](https://eic.github.io/G4OCCT/#/performance) —
+  Benchmark results and optimisation strategies.
 - [Material Bridging](https://eic.github.io/G4OCCT/#/material_bridging) —
   Strategies for mapping STEP/OCCT material names to `G4Material`.
+- [Multi-Shape STEP Assembly Import](https://eic.github.io/G4OCCT/#/step_assembly_import) —
+  Importing STEP assemblies via OCCT XDE into a Geant4 volume hierarchy.
+- [DD4hep Plugin Design](https://eic.github.io/G4OCCT/#/dd4hep_plugin) —
+  Using `G4OCCT_STEPSolid` and `G4OCCT_STEPAssembly` in DD4hep compact XML.
+- [Geometry Test Status](https://eic.github.io/G4OCCT/#/geometry_test_status) —
+  Validation coverage for all supported Geant4 primitive families.
+- **Examples:**
+  - [B1 — Water Phantom](https://eic.github.io/G4OCCT/#/example_b1)
+  - [B4c — Sampling Calorimeter](https://eic.github.io/G4OCCT/#/example_b4c)
+  - [DD4hep SimpleDetector — STEP-Backed VXD Layer](https://eic.github.io/G4OCCT/#/example_dd4hep_simpledetector)
 - [API Reference](https://eic.github.io/G4OCCT/api/) — Doxygen-generated
   API documentation.
 
