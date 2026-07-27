@@ -196,19 +196,19 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
     // named manager below would then delete the default geometry — and the solid
     // with it — leaving a dangling pointer.
     //
-    // Root ownership differs by shape construction path. Register the shape
-    // exactly once: add it only when it is not already present in the manager's
-    // shape list, so teardown avoids both leaks and duplicate-delete hazards.
+    // Root ownership differs by shape construction path. Construct the volume
+    // first, then register the shape only if it was not already inserted by
+    // ROOT internals, so teardown avoids duplicate-delete hazards.
     TGeoManager manager("geom", "geom");
     auto* material = new TGeoMaterial("mat", 1.0, 1.0, 1.0);
     auto* medium   = new TGeoMedium("med", 1, material);
     auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
     manager.SetTopVolume(top);
     auto* innerShape = LoadBox().release();
+    auto* inner      = new TGeoVolume("inner", innerShape, medium);
     if (!manager.GetListOfShapes()->FindObject(innerShape)) {
       manager.AddShape(innerShape);
     }
-    auto* inner = new TGeoVolume("inner", innerShape, medium);
     top->AddNode(inner, 1);
     manager.CloseGeometry();
 
