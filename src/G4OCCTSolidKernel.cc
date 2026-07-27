@@ -51,7 +51,6 @@
 #include <optional>
 #include <ranges>
 #include <stdexcept>
-#include <utility>
 
 namespace {
 
@@ -114,11 +113,8 @@ public:
           return Standard_True;
         }
       } else {
-        Standard_Real t1 = (ck_min - ok) / dk;
-        Standard_Real t2 = (ck_max - ok) / dk;
-        if (t1 > t2) {
-          std::swap(t1, t2);
-        }
+        const Standard_Real t1 = (ck_min - ok) / dk;
+        const Standard_Real t2 = (ck_max - ok) / dk;
         if (t1 > tmin) {
           tmin = t1;
         }

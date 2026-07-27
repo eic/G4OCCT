@@ -224,15 +224,7 @@ TEST(InsideClassification, RayParityDegenerateRayEdgeAndVertex) {
 
 // ── BVH TriangleRayCast investigation ─────────────────────────────────────────
 //
-// A. RejectNode slab-swap branch (if (t1 > t2) std::swap(t1, t2))
-//    This branch fires when a ray direction component is negative (t1 > t2
-//    means ck_min/dk > ck_max/dk, which requires dk < 0).  The three ray
-//    directions used by Inside() are always +Z (primary), +X, and +Y — all
-//    components are non-negative, so dk is never negative.  The swap branch
-//    is therefore structurally unreachable with the current fixed positive ray
-//    directions and cannot be triggered via the public API.
-//
-// B. TriangleRayCast::Accept myOnSurface path
+// TriangleRayCast::Accept myOnSurface path
 //    myOnSurface is set to true when |t| <= myTolerance, i.e. the ray origin
 //    lies on a tessellation triangle.  However, the BVH path is only entered
 //    when BVHLowerBoundDistance(p) >= tolerance (points provably away from the
