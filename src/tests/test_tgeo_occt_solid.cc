@@ -130,9 +130,20 @@ TEST(TGeoOCCTSolid, SetOCCTShapeRefreshesBBox) {
   EXPECT_NEAR(solid->GetAxisRange(1, xlo, xhi), 3.0, 1e-9);
   EXPECT_NEAR(solid->GetAxisRange(2, ylo, yhi), 3.0, 1e-9);
   EXPECT_NEAR(solid->GetAxisRange(3, zlo, zhi), 3.0, 1e-9);
+  EXPECT_NEAR(xlo, -1.5, 1e-9);
+  EXPECT_NEAR(xhi, 1.5, 1e-9);
+  EXPECT_NEAR(ylo, -1.5, 1e-9);
+  EXPECT_NEAR(yhi, 1.5, 1e-9);
+  EXPECT_NEAR(zlo, -1.5, 1e-9);
+  EXPECT_NEAR(zhi, 1.5, 1e-9);
   EXPECT_NEAR(solid->GetDX(), 1.5, 1e-9);
   EXPECT_NEAR(solid->GetDY(), 1.5, 1e-9);
   EXPECT_NEAR(solid->GetDZ(), 1.5, 1e-9);
+  const auto* origin = solid->GetOrigin();
+  ASSERT_NE(origin, nullptr);
+  EXPECT_NEAR(origin[0], 0.0, 1e-9);
+  EXPECT_NEAR(origin[1], 0.0, 1e-9);
+  EXPECT_NEAR(origin[2], 0.0, 1e-9);
 }
 
 TEST(TGeoOCCTSolid, MeshHooksProduceDrawableMesh) {
