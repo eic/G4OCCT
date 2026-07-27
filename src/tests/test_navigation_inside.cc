@@ -224,15 +224,21 @@ TEST(InsideClassification, RayParityDegenerateRayEdgeAndVertex) {
 
 // ── BVH TriangleRayCast investigation ─────────────────────────────────────────
 //
-// TriangleRayCast::Accept myOnSurface path
-//    myOnSurface is set to true when |t| <= myTolerance, i.e. the ray origin
-//    lies on a tessellation triangle.  However, the BVH path is only entered
-//    when BVHLowerBoundDistance(p) >= tolerance (points provably away from the
-//    mesh surface).  Points on a tessellation triangle have BVHLowerBoundDistance
-//    ≈ 0, so the guard condition redirects them to the OCCT exact classifier
-//    before any BVH traversal occurs.  The myOnSurface path in the BVH cast is
-//    therefore not reachable for geometric surface points through the current
-//    Inside() implementation; no additional test is added.
+// A. RejectNode slab-swap branch (if (t1 > t2) std::swap(t1, t2))
+//    This branch fires when a ray direction component is negative (t1 > t2
+//    means ck_min/dk > ck_max/dk, which requires dk < 0).  The three ray
+//    directions used by Inside() are always +Z (primary), +X, and +Y — all
+//    components are non-negative, so dk is never negative.  The swap branch
+//    is therefore structurally unreachable with the current fixed positive ray
+//    directions and cannot be triggered via the public API.
+//
+// B. TriangleRayCast::Accept myOnSurface path (removed)
+//    The myOnSurface flag and the |t| <= myTolerance branch were removed
+//    because the BVH path is only entered when BVHLowerBoundDistance(p) >=
+//    tolerance, which proves the point is away from the mesh surface.  Points
+//    on a tessellation triangle have BVHLowerBoundDistance ≈ 0, so the guard
+//    condition redirects them to the OCCT exact classifier before any BVH
+//    traversal occurs.  No test is needed because the branch no longer exists.
 
 // ── Curved-surface STEP fixture tests ─────────────────────────────────────────
 // These tests load real STEP files generated from Geant4 primitive shapes and
