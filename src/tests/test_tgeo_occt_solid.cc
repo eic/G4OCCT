@@ -104,7 +104,35 @@ TEST(TGeoOCCTSolid, BBoxAndCapacityAreInCm) {
   EXPECT_NEAR(solid->GetAxisRange(3, zlo, zhi), 4.0, 1e-9);
   EXPECT_NEAR(zlo, -2.0, 1e-9);
   EXPECT_NEAR(zhi, 2.0, 1e-9);
+  EXPECT_NEAR(solid->GetDX(), 1.0, 1e-9);
+  EXPECT_NEAR(solid->GetDY(), 1.5, 1e-9);
+  EXPECT_NEAR(solid->GetDZ(), 2.0, 1e-9);
+  const auto* origin = solid->GetOrigin();
+  ASSERT_NE(origin, nullptr);
+  EXPECT_NEAR(origin[0], 0.0, 1e-9);
+  EXPECT_NEAR(origin[1], 0.0, 1e-9);
+  EXPECT_NEAR(origin[2], 0.0, 1e-9);
   EXPECT_NEAR(solid->Capacity(), 24.0, 1e-9);
+}
+
+TEST(TGeoOCCTSolid, SetOCCTShapeRefreshesBBox) {
+  auto solid  = LoadBox();
+  auto sphere = LoadSphere();
+
+  solid->SetOCCTShape(sphere->GetOCCTShape());
+
+  Double_t xlo = 0.0;
+  Double_t xhi = 0.0;
+  Double_t ylo = 0.0;
+  Double_t yhi = 0.0;
+  Double_t zlo = 0.0;
+  Double_t zhi = 0.0;
+  EXPECT_NEAR(solid->GetAxisRange(1, xlo, xhi), 3.0, 1e-9);
+  EXPECT_NEAR(solid->GetAxisRange(2, ylo, yhi), 3.0, 1e-9);
+  EXPECT_NEAR(solid->GetAxisRange(3, zlo, zhi), 3.0, 1e-9);
+  EXPECT_NEAR(solid->GetDX(), 1.5, 1e-9);
+  EXPECT_NEAR(solid->GetDY(), 1.5, 1e-9);
+  EXPECT_NEAR(solid->GetDZ(), 1.5, 1e-9);
 }
 
 TEST(TGeoOCCTSolid, MeshHooksProduceDrawableMesh) {
