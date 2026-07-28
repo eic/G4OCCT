@@ -187,44 +187,35 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
     ~RootBatchGuard() { gROOT->SetBatch(previousBatchMode); }
   };
 
-  // Delete any TGeoManager that ROOT may have created automatically (e.g. when
-  // a previous test in the same process constructed a TGeoShape with
-  // gGeoManager == nullptr, causing ROOT to create a "default geometry").
-  // We must do this BEFORE creating shapes below; otherwise ROOT's "default
-  // geometry" would take ownership of the solid returned by LoadBox(), then
-  // delete it when our named TGeoManager is constructed — leaving a dangling
-  // pointer.  delete nullptr is a no-op, so this is always safe.
+  // Destroy any TGeoManager that ROOT may have already created (e.g. from a
+  // previous test that left gGeoManager set).  We create innerShape BEFORE
+  // constructing our own TGeoManager so that TGeoShape's base constructor does
+  // not auto-register the shape; see comment below.  delete nullptr is safe.
   delete gGeoManager;
   gGeoManager = nullptr;
 
   const RootBatchGuard batchGuard{gROOT->IsBatch()};
   gROOT->SetBatch(kTRUE);
   {
-    // Create the TGeoManager FIRST so that the solid returned by LoadBox()
-    // below does not cause ROOT to auto-create a "default geometry" manager.
-    // If LoadBox() were called while gGeoManager == nullptr, ROOT would create
-    // a "default geometry" that takes ownership of the solid; constructing the
-    // named manager below would then delete the default geometry — and the solid
-    // with it — leaving a dangling pointer.
+    // Create innerShape while gGeoManager == nullptr so that TGeoShape's base
+    // constructor does not auto-register it.  TGeoShape::TGeoShape() calls
+    // gGeoManager->AddShape(this) when gGeoManager is non-null.  If the
+    // shape were created after the TGeoManager below, the base-constructor
+    // registration followed by TGeoVolume's constructor registration would
+    // place it in fShapes twice, causing a double-delete at ~TGeoManager.
     //
-    // Root ownership differs by shape construction path. Construct the volume
-    // first, then register the shape only if it was not already inserted by
-    // ROOT internals, so teardown avoids duplicate-delete hazards.
+    // With gGeoManager == nullptr at shape construction time, the TGeoShape
+    // base constructor does NOT auto-create a new manager — it simply skips
+    // registration.  TGeoVolume's constructor then registers it exactly once.
+    auto* innerShape = LoadBox().release();
+
     TGeoManager manager("geom", "geom");
     auto* material = new TGeoMaterial("mat", 1.0, 1.0, 1.0);
     auto* medium   = new TGeoMedium("med", 1, material);
     auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
     manager.SetTopVolume(top);
-    auto* innerShape  = LoadBox().release();
-    auto* inner       = new TGeoVolume("inner", innerShape, medium);
-    auto* volumeShape = inner->GetShape();
-    if (volumeShape != innerShape) {
-      delete innerShape;
-    }
-    if (!manager.GetListOfShapes()->FindObject(volumeShape) &&
-        !manager.GetListOfShapes()->FindObject(volumeShape->GetName())) {
-      manager.AddShape(volumeShape);
-    }
+    // TGeoVolume constructor calls gGeoManager->AddShape(innerShape) once.
+    auto* inner = new TGeoVolume("inner", innerShape, medium);
     top->AddNode(inner, 1);
     manager.CloseGeometry();
 
