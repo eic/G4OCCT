@@ -199,14 +199,13 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
   {
     // Create innerShape while gGeoManager == nullptr so that TGeoShape's base
     // constructor does not auto-register it.  TGeoShape::TGeoShape() calls
-    // gGeoManager->AddShape(this) when gGeoManager is non-null.  If the
-    // shape were created after the TGeoManager below, the base-constructor
-    // registration followed by TGeoVolume's constructor registration would
-    // place it in fShapes twice, causing a double-delete at ~TGeoManager.
+    // gGeoManager->AddShape(this) when gGeoManager is non-null; if the shape
+    // were created after the TGeoManager below, that base-constructor
+    // registration combined with TGeoVolume's constructor registration would
+    // place it in fShapes twice → double-delete at ~TGeoManager time.
     //
-    // With gGeoManager == nullptr at shape construction time, the TGeoShape
-    // base constructor does NOT auto-create a new manager — it simply skips
-    // registration.  TGeoVolume's constructor then registers it exactly once.
+    // With gGeoManager == nullptr at shape construction time, TGeoShape simply
+    // skips registration.
     auto* innerShape = LoadBox().release();
 
     TGeoManager manager("geom", "geom");
@@ -214,8 +213,13 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
     auto* medium   = new TGeoMedium("med", 1, material);
     auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
     manager.SetTopVolume(top);
-    // TGeoVolume constructor calls gGeoManager->AddShape(innerShape) once.
     auto* inner = new TGeoVolume("inner", innerShape, medium);
+    // ROOT's TGeoVolume constructor may or may not call gGeoManager->AddShape()
+    // depending on the ROOT version.  Register here iff not already registered
+    // so the manager owns the shape exactly once and deletes it at teardown.
+    if (!manager.GetListOfShapes()->FindObject(innerShape)) {
+      manager.AddShape(innerShape);
+    }
     top->AddNode(inner, 1);
     manager.CloseGeometry();
 
