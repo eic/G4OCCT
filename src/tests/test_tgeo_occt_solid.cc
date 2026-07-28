@@ -104,7 +104,46 @@ TEST(TGeoOCCTSolid, BBoxAndCapacityAreInCm) {
   EXPECT_NEAR(solid->GetAxisRange(3, zlo, zhi), 4.0, 1e-9);
   EXPECT_NEAR(zlo, -2.0, 1e-9);
   EXPECT_NEAR(zhi, 2.0, 1e-9);
+  EXPECT_NEAR(solid->GetDX(), 1.0, 1e-9);
+  EXPECT_NEAR(solid->GetDY(), 1.5, 1e-9);
+  EXPECT_NEAR(solid->GetDZ(), 2.0, 1e-9);
+  const auto* origin = solid->GetOrigin();
+  ASSERT_NE(origin, nullptr);
+  EXPECT_NEAR(origin[0], 0.0, 1e-9);
+  EXPECT_NEAR(origin[1], 0.0, 1e-9);
+  EXPECT_NEAR(origin[2], 0.0, 1e-9);
   EXPECT_NEAR(solid->Capacity(), 24.0, 1e-9);
+}
+
+TEST(TGeoOCCTSolid, SetOCCTShapeRefreshesBBox) {
+  auto solid  = LoadBox();
+  auto sphere = LoadSphere();
+
+  solid->SetOCCTShape(sphere->GetOCCTShape());
+
+  Double_t xlo = 0.0;
+  Double_t xhi = 0.0;
+  Double_t ylo = 0.0;
+  Double_t yhi = 0.0;
+  Double_t zlo = 0.0;
+  Double_t zhi = 0.0;
+  EXPECT_NEAR(solid->GetAxisRange(1, xlo, xhi), 3.0, 1e-9);
+  EXPECT_NEAR(solid->GetAxisRange(2, ylo, yhi), 3.0, 1e-9);
+  EXPECT_NEAR(solid->GetAxisRange(3, zlo, zhi), 3.0, 1e-9);
+  EXPECT_NEAR(xlo, -1.5, 1e-9);
+  EXPECT_NEAR(xhi, 1.5, 1e-9);
+  EXPECT_NEAR(ylo, -1.5, 1e-9);
+  EXPECT_NEAR(yhi, 1.5, 1e-9);
+  EXPECT_NEAR(zlo, -1.5, 1e-9);
+  EXPECT_NEAR(zhi, 1.5, 1e-9);
+  EXPECT_NEAR(solid->GetDX(), 1.5, 1e-9);
+  EXPECT_NEAR(solid->GetDY(), 1.5, 1e-9);
+  EXPECT_NEAR(solid->GetDZ(), 1.5, 1e-9);
+  const auto* origin = solid->GetOrigin();
+  ASSERT_NE(origin, nullptr);
+  EXPECT_NEAR(origin[0], 0.0, 1e-9);
+  EXPECT_NEAR(origin[1], 0.0, 1e-9);
+  EXPECT_NEAR(origin[2], 0.0, 1e-9);
 }
 
 TEST(TGeoOCCTSolid, MeshHooksProduceDrawableMesh) {
@@ -148,39 +187,39 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
     ~RootBatchGuard() { gROOT->SetBatch(previousBatchMode); }
   };
 
-  // Delete any TGeoManager that ROOT may have created automatically (e.g. when
-  // a previous test in the same process constructed a TGeoShape with
-  // gGeoManager == nullptr, causing ROOT to create a "default geometry").
-  // We must do this BEFORE creating shapes below; otherwise ROOT's "default
-  // geometry" would take ownership of the solid returned by LoadBox(), then
-  // delete it when our named TGeoManager is constructed — leaving a dangling
-  // pointer.  delete nullptr is a no-op, so this is always safe.
+  // Destroy any TGeoManager that ROOT may have already created (e.g. from a
+  // previous test that left gGeoManager set).  We create innerShape BEFORE
+  // constructing our own TGeoManager so that TGeoShape's base constructor does
+  // not auto-register the shape; see comment below.  delete nullptr is safe.
   delete gGeoManager;
   gGeoManager = nullptr;
 
   const RootBatchGuard batchGuard{gROOT->IsBatch()};
   gROOT->SetBatch(kTRUE);
   {
-    // Create the TGeoManager FIRST so that the solid returned by LoadBox()
-    // below does not cause ROOT to auto-create a "default geometry" manager.
-    // If LoadBox() were called while gGeoManager == nullptr, ROOT would create
-    // a "default geometry" that takes ownership of the solid; constructing the
-    // named manager below would then delete the default geometry — and the solid
-    // with it — leaving a dangling pointer.
+    // Create innerShape while gGeoManager == nullptr so that TGeoShape's base
+    // constructor does not auto-register it.  TGeoShape::TGeoShape() calls
+    // gGeoManager->AddShape(this) when gGeoManager is non-null; if the shape
+    // were created after the TGeoManager below, that base-constructor
+    // registration combined with TGeoVolume's constructor registration would
+    // place it in fShapes twice → double-delete at ~TGeoManager time.
     //
-    // Root ownership differs by shape construction path. Register the shape
-    // exactly once: add it only when it is not already present in the manager's
-    // shape list, so teardown avoids both leaks and duplicate-delete hazards.
+    // With gGeoManager == nullptr at shape construction time, TGeoShape simply
+    // skips registration.
+    auto* innerShape = LoadBox().release();
+
     TGeoManager manager("geom", "geom");
     auto* material = new TGeoMaterial("mat", 1.0, 1.0, 1.0);
     auto* medium   = new TGeoMedium("med", 1, material);
     auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
     manager.SetTopVolume(top);
-    auto* innerShape = LoadBox().release();
+    auto* inner = new TGeoVolume("inner", innerShape, medium);
+    // ROOT's TGeoVolume constructor may or may not call gGeoManager->AddShape()
+    // depending on the ROOT version.  Register here iff not already registered
+    // so the manager owns the shape exactly once and deletes it at teardown.
     if (!manager.GetListOfShapes()->FindObject(innerShape)) {
       manager.AddShape(innerShape);
     }
-    auto* inner = new TGeoVolume("inner", innerShape, medium);
     top->AddNode(inner, 1);
     manager.CloseGeometry();
 

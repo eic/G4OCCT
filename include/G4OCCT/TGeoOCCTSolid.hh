@@ -11,14 +11,13 @@
 #error "G4OCCT/TGeoOCCTSolid.hh requires BUILD_ROOT_TGEO_SUPPORT=ON when G4OCCT is built."
 #endif
 
-#include <TGeoShape.h>
+#include <TGeoBBox.h>
 
 #include <cstdint>
 #include <memory>
 #include <limits>
 #include <string>
 
-class TGeoBBox;
 class TGeoTessellated;
 class TopoDS_Shape;
 class TGeoMatrix;
@@ -40,7 +39,7 @@ class TGeoOCCTSolidBridge;
  * shared kernel uses Geant4 millimetres internally. The bridge performs the
  * required cm↔mm conversions for all query inputs and outputs.
  */
-class TGeoOCCTSolid : public TGeoShape {
+class TGeoOCCTSolid : public TGeoBBox {
 public:
   TGeoOCCTSolid();
   TGeoOCCTSolid(const char* name, const TopoDS_Shape& shape);
@@ -90,7 +89,6 @@ public:
   void SetOCCTShape(const TopoDS_Shape& shape);
 
 private:
-  TGeoBBox BuildBBoxHelper() const;
   void EnsureDisplayHelper() const;
 
   std::unique_ptr<g4occt::detail::TGeoOCCTSolidBridge> fBridge;
