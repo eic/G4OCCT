@@ -215,10 +215,15 @@ TEST(TGeoOCCTSolid, RootDrawingSmoke) {
     auto* medium   = new TGeoMedium("med", 1, material);
     auto* top      = manager.MakeBox("world", medium, 100.0, 100.0, 100.0);
     manager.SetTopVolume(top);
-    auto* innerShape = LoadBox().release();
-    auto* inner      = new TGeoVolume("inner", innerShape, medium);
-    if (!manager.GetListOfShapes()->FindObject(innerShape)) {
-      manager.AddShape(innerShape);
+    auto* innerShape  = LoadBox().release();
+    auto* inner       = new TGeoVolume("inner", innerShape, medium);
+    auto* volumeShape = inner->GetShape();
+    if (volumeShape != innerShape) {
+      delete innerShape;
+    }
+    if (!manager.GetListOfShapes()->FindObject(volumeShape) &&
+        !manager.GetListOfShapes()->FindObject(volumeShape->GetName())) {
+      manager.AddShape(volumeShape);
     }
     top->AddNode(inner, 1);
     manager.CloseGeometry();

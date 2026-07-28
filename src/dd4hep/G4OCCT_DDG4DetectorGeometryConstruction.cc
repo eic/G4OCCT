@@ -30,11 +30,10 @@ namespace sim {
     using Geant4Converter::Geant4Converter;
 
     void* handleSolid(const std::string& name, const TGeoShape* shape) const override {
-      if (shape && shape->IsA() == TGeoOCCTSolid::Class()) {
+      if (const auto* occtShape = dynamic_cast<const TGeoOCCTSolid*>(shape)) {
         if (G4VSolid* cached = data().g4Solids[shape]) {
           return cached;
         }
-        auto* occtShape        = static_cast<const TGeoOCCTSolid*>(shape);
         auto* exact            = new G4OCCTSolid(name.c_str(), occtShape->GetOCCTShape());
         data().g4Solids[shape] = exact;
         printout(outputLevel, "G4OCCTGeant4Converter",
