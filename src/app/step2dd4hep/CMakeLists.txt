@@ -95,13 +95,14 @@ if(BUILD_TESTING)
     COMMAND $<TARGET_FILE:step2dd4hep> -o out.xml -m out_mat.xml
             nonexistent_file.step
     WORKING_DIRECTORY "${_STEP2DD4HEP_BADFILE_DIR}")
-  set_tests_properties(step2dd4hep_missing_file_fails
-                       PROPERTIES PASS_REGULAR_EXPRESSION "not found|failed to read")
+  set_tests_properties(
+    step2dd4hep_missing_file_fails PROPERTIES PASS_REGULAR_EXPRESSION
+                                              "not found|failed to read")
 
   # ── 7. No arguments: tool must print usage ────────────────────────────────
   add_test(NAME step2dd4hep_no_args_fails COMMAND $<TARGET_FILE:step2dd4hep>)
-  set_tests_properties(step2dd4hep_no_args_fails PROPERTIES PASS_REGULAR_EXPRESSION
-                                                            "Usage:")
+  set_tests_properties(step2dd4hep_no_args_fails
+                       PROPERTIES PASS_REGULAR_EXPRESSION "Usage:")
 
   # ── 8. --existing-map seeds known mappings (no TODO for Component) ────────
   add_test(
