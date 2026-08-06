@@ -138,11 +138,13 @@ if(BUILD_TESTING)
                        PROPERTIES FIXTURES_SETUP step2dd4hep_existing_fixture)
 
   # ── Timeouts ──────────────────────────────────────────────────────────────
+  # Note: WORKING_DIRECTORY is intentionally not repeated here; each add_test()
+  # already specifies the correct per-test directory and a later
+  # set_tests_properties() call would override it.
   set_tests_properties(
     step2dd4hep_solid_runs step2dd4hep_assembly_runs
     step2dd4hep_existing_map_runs step2dd4hep_missing_file_fails
-    step2dd4hep_no_args_fails
-    PROPERTIES TIMEOUT 60 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    step2dd4hep_no_args_fails PROPERTIES TIMEOUT 60)
   set_tests_properties(
     step2dd4hep_solid_compact_plugin step2dd4hep_solid_compact_path
     step2dd4hep_solid_matmap_exists step2dd4hep_assembly_compact_has_entry

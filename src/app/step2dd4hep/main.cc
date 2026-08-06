@@ -47,12 +47,14 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -91,7 +93,6 @@ static std::string MaterialName(const TDF_Label& label,
 /// The priority order matches G4OCCTAssemblyVolume::ImportLabel:
 ///  1. XDE material attribute on the referred shape label.
 ///  2. TDataStd_Name of the referred shape label.
-///  3. TDataStd_Name of the component/reference label.
 static void CollectMaterials(const TDF_Label& label, const Handle(XCAFDoc_ShapeTool) & shapeTool,
                              const Handle(XCAFDoc_MaterialTool) & matTool,
                              std::set<std::string>& out) {
@@ -145,6 +146,27 @@ static std::string XmlAttr(const std::string& s) {
 
 // ── Existing material map reader (lightweight, no Geant4 dependency) ─────────
 
+/// Unescape the five predefined XML entities in an attribute value string
+/// so that names read back from the written XML match the raw OCCT strings.
+static std::string XmlUnescape(std::string s) {
+  struct Ent { const char* escaped; const char* raw; };
+  static constexpr Ent kEntities[] = {
+    {"&amp;",  "&"},
+    {"&quot;", "\""},
+    {"&lt;",   "<"},
+    {"&gt;",   ">"},
+    {"&apos;", "'"},
+  };
+  for (const auto& e : kEntities) {
+    std::string::size_type pos = 0;
+    while ((pos = s.find(e.escaped, pos)) != std::string::npos) {
+      s.replace(pos, std::strlen(e.escaped), e.raw);
+      pos += std::strlen(e.raw);
+    }
+  }
+  return s;
+}
+
 /// Parse an existing material-map XML produced by this tool and return a map
 /// of step_name → dd4hep_material for entries that are not placeholders.
 static std::map<std::string, std::string> ReadExistingMap(const std::string& path) {
@@ -167,8 +189,8 @@ static std::map<std::string, std::string> ReadExistingMap(const std::string& pat
     auto mend = line.find('"', mpos);
     if (send == std::string::npos || mend == std::string::npos)
       continue;
-    std::string stepName = line.substr(spos, send - spos);
-    std::string matName  = line.substr(mpos, mend - mpos);
+    std::string stepName = XmlUnescape(line.substr(spos, send - spos));
+    std::string matName  = XmlUnescape(line.substr(mpos, mend - mpos));
     if (!matName.empty() && matName != "TODO")
       result[stepName] = matName;
   }
@@ -181,9 +203,9 @@ static void PrintUsage(const char* prog) {
   std::cerr << "Usage: " << prog << " [options] geometry.step\n"
             << "\n"
             << "Options:\n"
-            << "  -o <file>              Output compact XML (default: <stem>.xml)\n"
+            << "  -o <file>              Output compact XML (default: ./<stem>.xml)\n"
             << "  -m <file>              Output material-map XML "
-               "(default: <stem>_materials.xml)\n"
+               "(default: ./<stem>_materials.xml)\n"
             << "  --existing-map <file>  Existing material-map XML to seed mappings from\n"
             << "  --detector-id <n>      Detector id in compact file (default: 1)\n"
             << "  --detector-name <n>    Detector element name (default: STEP file stem)\n"
@@ -229,7 +251,13 @@ int main(int argc, char** argv) {
         std::cerr << "step2dd4hep: --detector-id requires an argument\n";
         return 1;
       }
-      detectorId = std::stoi(argv[i]);
+      try {
+        detectorId = std::stoi(argv[i]);
+      } catch (const std::exception& e) {
+        std::cerr << "step2dd4hep: --detector-id requires a valid integer, got '"
+                  << argv[i] << "': " << e.what() << "\n";
+        return 1;
+      }
     } else if (arg == "--detector-name") {
       if (++i >= argc) {
         std::cerr << "step2dd4hep: --detector-name requires an argument\n";
@@ -259,9 +287,9 @@ int main(int argc, char** argv) {
   std::string stem = stepFsPath.stem().string();
 
   if (compactOut.empty())
-    compactOut = (stepFsPath.parent_path() / (stem + ".xml")).string();
+    compactOut = (fs::current_path() / (stem + ".xml")).string();
   if (materialOut.empty())
-    materialOut = (stepFsPath.parent_path() / (stem + "_materials.xml")).string();
+    materialOut = (fs::current_path() / (stem + "_materials.xml")).string();
   if (detectorName.empty())
     detectorName = stem;
 

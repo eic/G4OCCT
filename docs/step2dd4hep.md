@@ -40,8 +40,8 @@ ddsim --compactFile geometry.xml --runType run -N 1000
 step2dd4hep [options] geometry.step
 
 Options:
-  -o <file>              Output compact XML (default: <stem>.xml)
-  -m <file>              Output material-map XML (default: <stem>_materials.xml)
+  -o <file>              Output compact XML (default: ./<stem>.xml)
+  -m <file>              Output material-map XML (default: ./<stem>_materials.xml)
   --existing-map <file>  Existing material-map XML to seed known mappings from
   --detector-id <n>      Numeric detector id in the compact file (default: 1)
   --detector-name <n>    Detector element name (default: STEP file stem)
