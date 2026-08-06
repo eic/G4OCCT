@@ -14,6 +14,11 @@ project(
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# ─── Shared/static library configuration ──────────────────────────────────
+
+option(BUILD_SHARED_LIBS "Build shared libraries instead of static" ON)
+
 option(G4OCCT_ENABLE_PIC
        "Build targets with position independent code by default" ON)
 if(G4OCCT_ENABLE_PIC)
