@@ -92,8 +92,7 @@ static std::string MaterialName(const TDF_Label& label,
 ///  1. XDE material attribute on the referred shape label.
 ///  2. TDataStd_Name of the referred shape label.
 ///  3. TDataStd_Name of the component/reference label.
-static void CollectMaterials(const TDF_Label& label,
-                             const Handle(XCAFDoc_ShapeTool) & shapeTool,
+static void CollectMaterials(const TDF_Label& label, const Handle(XCAFDoc_ShapeTool) & shapeTool,
                              const Handle(XCAFDoc_MaterialTool) & matTool,
                              std::set<std::string>& out) {
   if (shapeTool->IsAssembly(label)) {
@@ -125,11 +124,20 @@ static std::string XmlAttr(const std::string& s) {
   out.reserve(s.size());
   for (char c : s) {
     switch (c) {
-    case '&': out += "&amp;"; break;
-    case '"': out += "&quot;"; break;
-    case '<': out += "&lt;"; break;
-    case '>': out += "&gt;"; break;
-    default: out += c;
+    case '&':
+      out += "&amp;";
+      break;
+    case '"':
+      out += "&quot;";
+      break;
+    case '<':
+      out += "&lt;";
+      break;
+    case '>':
+      out += "&gt;";
+      break;
+    default:
+      out += c;
     }
   }
   return out;
@@ -276,7 +284,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+  Handle(XCAFDoc_ShapeTool) shapeTool  = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
   Handle(XCAFDoc_MaterialTool) matTool = XCAFDoc_DocumentTool::MaterialTool(doc->Main());
 
   // ── Collect unique material/shape keys ────────────────────────────────────
@@ -318,7 +326,7 @@ int main(int argc, char** argv) {
         << "-->\n"
         << "<material_map>\n";
     for (const auto& name : stepNames) {
-      auto it = knownMappings.find(name);
+      auto it            = knownMappings.find(name);
       std::string mapped = (it != knownMappings.end()) ? it->second : "TODO";
       out << "  <entry step_name=\"" << XmlAttr(name) << "\""
           << " dd4hep_material=\"" << XmlAttr(mapped) << "\"/>\n";
@@ -380,7 +388,7 @@ int main(int argc, char** argv) {
         << "        -->\n";
 
     for (const auto& name : stepNames) {
-      auto it     = knownMappings.find(name);
+      auto it            = knownMappings.find(name);
       std::string mapped = (it != knownMappings.end()) ? it->second : "TODO";
       out << "        <entry step_name=\"" << XmlAttr(name) << "\""
           << " dd4hep_material=\"" << XmlAttr(mapped) << "\"/>\n";
