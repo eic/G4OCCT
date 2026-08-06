@@ -297,6 +297,14 @@ int main(int argc, char** argv) {
   Handle(TDocStd_Document) doc;
   app->NewDocument("MDTV-CAF", doc);
 
+  // ── Check file existence before invoking the OCCT reader ─────────────────
+  // Some OCCT builds return IFSelect_RetDone for a missing path (creating an
+  // empty document), so we guard with an explicit existence check first.
+  if (!fs::exists(stepFsPath)) {
+    std::cerr << "step2dd4hep: STEP file not found: '" << stepPath << "'\n";
+    return 1;
+  }
+
   STEPCAFControl_Reader reader;
   reader.SetNameMode(Standard_True);
   reader.SetMatMode(Standard_True);

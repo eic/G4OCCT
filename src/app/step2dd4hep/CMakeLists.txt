@@ -89,17 +89,19 @@ if(BUILD_TESTING)
       "FILE=${_STEP2DD4HEP_ASSEMBLY_DIR}/assembly_materials.xml" -D
       "STRING=Component" -P "${_CHECK_CONTAINS}")
 
-  # ── 6. Non-existent file: tool must exit non-zero ─────────────────────────
+  # ── 6. Non-existent file: tool must print an error ───────────────────────
   add_test(
     NAME step2dd4hep_missing_file_fails
     COMMAND $<TARGET_FILE:step2dd4hep> -o out.xml -m out_mat.xml
             nonexistent_file.step
     WORKING_DIRECTORY "${_STEP2DD4HEP_BADFILE_DIR}")
-  set_tests_properties(step2dd4hep_missing_file_fails PROPERTIES WILL_FAIL TRUE)
+  set_tests_properties(step2dd4hep_missing_file_fails
+                       PROPERTIES PASS_REGULAR_EXPRESSION "not found|failed to read")
 
-  # ── 7. No arguments: tool must exit non-zero ──────────────────────────────
+  # ── 7. No arguments: tool must print usage ────────────────────────────────
   add_test(NAME step2dd4hep_no_args_fails COMMAND $<TARGET_FILE:step2dd4hep>)
-  set_tests_properties(step2dd4hep_no_args_fails PROPERTIES WILL_FAIL TRUE)
+  set_tests_properties(step2dd4hep_no_args_fails PROPERTIES PASS_REGULAR_EXPRESSION
+                                                            "Usage:")
 
   # ── 8. --existing-map seeds known mappings (no TODO for Component) ────────
   add_test(
