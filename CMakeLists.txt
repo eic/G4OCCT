@@ -293,6 +293,7 @@ endif()
 include(GNUInstallDirs)
 
 add_subdirectory(src/app/g4occt)
+add_subdirectory(src/app/step2dd4hep)
 
 # ─── Installation ─────────────────────────────────────────────────────────────
 
