@@ -36,7 +36,7 @@ ddsim --compactFile geometry.xml --runType run -N 1000
 
 ## Command-line reference
 
-```
+```text
 step2dd4hep [options] geometry.step
 
 Options:
