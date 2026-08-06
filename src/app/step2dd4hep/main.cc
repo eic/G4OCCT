@@ -149,13 +149,12 @@ static std::string XmlAttr(const std::string& s) {
 /// Unescape the five predefined XML entities in an attribute value string
 /// so that names read back from the written XML match the raw OCCT strings.
 static std::string XmlUnescape(std::string s) {
-  struct Ent { const char* escaped; const char* raw; };
+  struct Ent {
+    const char* escaped;
+    const char* raw;
+  };
   static constexpr Ent kEntities[] = {
-    {"&amp;",  "&"},
-    {"&quot;", "\""},
-    {"&lt;",   "<"},
-    {"&gt;",   ">"},
-    {"&apos;", "'"},
+      {"&amp;", "&"}, {"&quot;", "\""}, {"&lt;", "<"}, {"&gt;", ">"}, {"&apos;", "'"},
   };
   for (const auto& e : kEntities) {
     std::string::size_type pos = 0;
@@ -254,8 +253,8 @@ int main(int argc, char** argv) {
       try {
         detectorId = std::stoi(argv[i]);
       } catch (const std::exception& e) {
-        std::cerr << "step2dd4hep: --detector-id requires a valid integer, got '"
-                  << argv[i] << "': " << e.what() << "\n";
+        std::cerr << "step2dd4hep: --detector-id requires a valid integer, got '" << argv[i]
+                  << "': " << e.what() << "\n";
         return 1;
       }
     } else if (arg == "--detector-name") {
