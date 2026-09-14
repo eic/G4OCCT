@@ -329,6 +329,9 @@ jobs:
             build/src/benchmarks/bench_callgrind
             build/src/benchmarks/bench_assembly_navigator
             build/src/examples/B4c/exampleB4c
+            build/libG4OCCT.so*
+            build/libG4OCCTFixtureSupport.so*
+            build/dd4hep/libG4OCCTDD4hep.so*
           if-no-files-found: error
           retention-days: 1
 
@@ -385,7 +388,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: reldebinfo-binaries
-          path: build/src
+          path: build
 
       - name: Install CVMFS
         uses: cvmfs-contrib/github-action-cvmfs@v5
@@ -404,7 +407,9 @@ jobs:
             # --collect-atstart=no: collection also off at launch; the binary
             # enables it via CALLGRIND_TOGGLE_COLLECT so only the hot loop
             # contributes to the callgrind profile.
+            # LD_LIBRARY_PATH: shared libraries from artifact are in build/
             chmod +x ./build/src/benchmarks/bench_callgrind
+            LD_LIBRARY_PATH="${PWD}/build:${LD_LIBRARY_PATH:-}" \
             valgrind --tool=callgrind \
               --instr-atstart=no \
               --collect-atstart=no \
@@ -470,7 +475,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: reldebinfo-binaries
-          path: build/src
+          path: build
 
       - name: Install CVMFS
         uses: cvmfs-contrib/github-action-cvmfs@v5
@@ -492,7 +497,9 @@ jobs:
             #   GDML parse, STEP import, and geometry construction from the profile.
             # --benchmark_iterations=1: one iteration per benchmark variant keeps
             #   the callgrind run fast while still profiling the full navigation loop.
+            # LD_LIBRARY_PATH: shared libraries from artifact are in build/
             chmod +x ./build/src/benchmarks/bench_assembly_navigator
+            LD_LIBRARY_PATH="${PWD}/build:${LD_LIBRARY_PATH:-}" \
             valgrind --tool=callgrind \
               --instr-atstart=no \
               --collect-atstart=no \
@@ -538,7 +545,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: reldebinfo-binaries
-          path: build/src
+          path: build
 
       - name: Install CVMFS
         uses: cvmfs-contrib/github-action-cvmfs@v5
@@ -560,7 +567,9 @@ jobs:
             #   CALLGRIND_TOGGLE_COLLECT is called inside BeginOfRunAction.
             # run_profile.mac: 100 events of e- 300 MeV — enough statistics
             #   for stable per-method call ratios without excessive CI runtime.
+            # LD_LIBRARY_PATH: shared libraries from artifact are in build/
             chmod +x ./build/src/examples/B4c/exampleB4c
+            LD_LIBRARY_PATH="${PWD}/build:${LD_LIBRARY_PATH:-}" \
             valgrind --tool=callgrind \
               --instr-atstart=no \
               --collect-atstart=no \

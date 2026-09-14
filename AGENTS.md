@@ -179,6 +179,11 @@ Do not lower these version floors without an explicit project decision.
   Add sanitizer flags unconditionally inside the relevant CMake option block.
 - `BUILD_TESTING` (CTest) and `BUILD_BENCHMARKS` are both `ON` in CI; they
   must be kept independently buildable with either flag off.
+- `BUILD_SHARED_LIBS` (standard CMake option) defaults to `ON` (shared
+  libraries). Users can override with `-DBUILD_SHARED_LIBS=OFF` to build static
+  libraries instead. All library targets (G4OCCT, G4OCCTFixtureSupport,
+  G4OCCTDD4hep) are defined without explicit SHARED/STATIC keywords, allowing
+  CMake to respect this option automatically.
 - Install rules live in the top-level file; the exported target is
   `G4OCCT::G4OCCT`.
 

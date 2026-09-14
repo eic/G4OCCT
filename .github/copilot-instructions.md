@@ -35,6 +35,7 @@ Every new file must begin with:
 - C++20, CMake ≥ 3.16
 - Geant4 ≥ 11.3 (`find_package(Geant4 11.3 REQUIRED)`)
 - OpenCASCADE ≥ 7.8 (`find_package(OpenCASCADE 7.8 REQUIRED ...)`)
+- `BUILD_SHARED_LIBS` defaults to `ON` (shared libraries); use `-DBUILD_SHARED_LIBS=OFF` for static libraries
 
 ### CI
 
