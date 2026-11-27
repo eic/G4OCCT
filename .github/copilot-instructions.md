@@ -34,7 +34,8 @@ Every new file must begin with:
 
 - C++20, CMake ≥ 3.16
 - Geant4 ≥ 11.3 (`find_package(Geant4 11.3 REQUIRED)`)
-- OpenCASCADE ≥ 7.8 (`find_package(OpenCASCADE 7.8 REQUIRED ...)`)
+- OpenCASCADE ≥ 8.0 (unversioned `find_package(OpenCASCADE)` + explicit `VERSION_LESS` check;
+  OCCT's version file is `ExactVersion`)
 - No deprecated OCCT aliases (newer OCCT + `-Werror`): use `double`/`int`/`bool`/`true`/`false`
   and `NCollection_Sequence<TDF_Label>`, not `Standard_Real`/`Standard_Integer`/`Standard_Boolean`/
   `Standard_True`/`Standard_False`/`TDF_LabelSequence`.

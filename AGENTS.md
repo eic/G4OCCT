@@ -156,8 +156,12 @@ AI agents) must follow these instructions.
   available and preferred.  Prefer `std::numbers::pi` over `M_PI` or
   `acos(-1.0)`.
 - **Minimum Geant4 version:** 11.3 — specified as `find_package(Geant4 11.3 REQUIRED)`.
-- **Minimum OpenCASCADE version:** 7.8 — specified as
-  `find_package(OpenCASCADE 7.8 REQUIRED COMPONENTS ...)`.
+- **Minimum OpenCASCADE version:** 8.0 — set as `G4OCCT_MIN_OCCT_VERSION` in
+  the top-level `CMakeLists.txt` and enforced with an explicit
+  `VERSION_LESS` check after `find_package(OpenCASCADE REQUIRED)` (mirrored
+  in `cmake/G4OCCTConfig.cmake.in`).  Do **not** pass a version to
+  `find_package(OpenCASCADE ...)`: OCCT installs its version file with
+  `COMPATIBILITY ExactVersion`, so a version argument pins a single release.
 - **CMake minimum:** 3.16.
 
 Do not lower these version floors without an explicit project decision.
@@ -168,7 +172,7 @@ Do not lower these version floors without an explicit project decision.
   underlying types directly: `double`, `int`, `bool`, `true`/`false`,
   `NCollection_Sequence<TDF_Label>` (not `Standard_Real`, `Standard_Integer`,
   `Standard_Boolean`, `Standard_True`/`Standard_False`, `TDF_LabelSequence`).
-  These are identical typedefs in OCCT 7.8, so no compatibility is lost.
+  Code may rely on OCCT ≥ 8.0 interfaces.
 
 ---
 

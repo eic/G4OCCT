@@ -6,7 +6,15 @@ spack:
 
   specs:
   - "geant4@11.3: ~opengl ~qt ~x11"
-  - "opencascade@7.8:"
+  - "opencascade@8.0:"
+
+  # Spack releases/v1.1 defaults to spack-packages releases/v2025.11, which
+  # stops at opencascade@7.8.1.  releases/v2026.10 (same repo API v2.2) adds
+  # opencascade@8.0.0 / 8.0.0.p1.
+  repos:
+    builtin:
+      git: https://github.com/spack/spack-packages.git
+      branch: releases/v2026.10
 
   config:
     install_tree:
