@@ -46,7 +46,10 @@ target_compile_definitions(
 # RunAction can gate instrumentation around the run.
 if(VALGRIND_INCLUDE_DIR)
   target_compile_definitions(exampleB4c PRIVATE HAVE_VALGRIND_CALLGRIND_H)
-  target_include_directories(exampleB4c PRIVATE "${VALGRIND_INCLUDE_DIR}")
+  # SYSTEM AFTER: the valgrind dir (e.g. /opt/local/include) may also hold an
+  # installed G4OCCT; it must not shadow the in-tree headers.
+  target_include_directories(exampleB4c SYSTEM AFTER
+                             PRIVATE "${VALGRIND_INCLUDE_DIR}")
 endif()
 
 # ─── CTest integration ───────────────────────────────────────────────────────

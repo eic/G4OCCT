@@ -189,6 +189,11 @@ Do not lower these version floors without an explicit project decision.
   must be kept independently buildable with either flag off.
 - Install rules live in the top-level file; the exported target is
   `G4OCCT::G4OCCT`.
+- Auxiliary include directories that may also contain an installed G4OCCT
+  (e.g. `VALGRIND_INCLUDE_DIR=/opt/local/include` in `eic_xl`) must be added
+  with `target_include_directories(<tgt> SYSTEM AFTER PRIVATE ...)`.  A plain
+  `PRIVATE` dir is searched before the in-tree `include/` and silently picks
+  up stale installed headers.
 
 ---
 

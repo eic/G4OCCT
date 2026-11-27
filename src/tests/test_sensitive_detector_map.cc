@@ -26,7 +26,6 @@
 #include <TCollection_HAsciiString.hxx>
 #include <TDataStd_Name.hxx>
 #include <TDF_Label.hxx>
-#include <NCollection_Sequence.hxx>
 #include <TDocStd_Application.hxx>
 #include <TDocStd_Document.hxx>
 #include <TopLoc_Location.hxx>
