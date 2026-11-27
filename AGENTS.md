@@ -156,11 +156,23 @@ AI agents) must follow these instructions.
   available and preferred.  Prefer `std::numbers::pi` over `M_PI` or
   `acos(-1.0)`.
 - **Minimum Geant4 version:** 11.3 — specified as `find_package(Geant4 11.3 REQUIRED)`.
-- **Minimum OpenCASCADE version:** 7.8 — specified as
-  `find_package(OpenCASCADE 7.8 REQUIRED COMPONENTS ...)`.
+- **Minimum OpenCASCADE version:** 8.0 — set as `G4OCCT_MIN_OCCT_VERSION` in
+  the top-level `CMakeLists.txt` and enforced with an explicit
+  `VERSION_LESS` check after `find_package(OpenCASCADE REQUIRED)` (mirrored
+  in `cmake/G4OCCTConfig.cmake.in`).  Do **not** pass a version to
+  `find_package(OpenCASCADE ...)`: OCCT installs its version file with
+  `COMPATIBILITY ExactVersion`, so a version argument pins a single release.
 - **CMake minimum:** 3.16.
 
 Do not lower these version floors without an explicit project decision.
+
+- **No deprecated OCCT aliases.**  Newer OCCT releases (shipped in
+  `eic_xl:nightly`) mark the `Standard_*` typedefs and many collection
+  aliases as deprecated, which fails the `-Werror` build.  Use the
+  underlying types directly: `double`, `int`, `bool`, `true`/`false`,
+  `NCollection_Sequence<TDF_Label>` (not `Standard_Real`, `Standard_Integer`,
+  `Standard_Boolean`, `Standard_True`/`Standard_False`, `TDF_LabelSequence`).
+  Code may rely on OCCT ≥ 8.0 interfaces.
 
 ---
 
@@ -181,6 +193,11 @@ Do not lower these version floors without an explicit project decision.
   must be kept independently buildable with either flag off.
 - Install rules live in the top-level file; the exported target is
   `G4OCCT::G4OCCT`.
+- Auxiliary include directories that may also contain an installed G4OCCT
+  (e.g. `VALGRIND_INCLUDE_DIR=/opt/local/include` in `eic_xl`) must be added
+  with `target_include_directories(<tgt> SYSTEM AFTER PRIVATE ...)`.  A plain
+  `PRIVATE` dir is searched before the in-tree `include/` and silently picks
+  up stale installed headers.
 
 ---
 

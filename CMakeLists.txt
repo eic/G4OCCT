@@ -116,7 +116,17 @@ endif()
 # ─── External dependencies ────────────────────────────────────────────────────
 
 find_package(Geant4 11.3 REQUIRED)
+# OCCT installs its package-version file with COMPATIBILITY ExactVersion, so a
+# version argument to find_package() would pin a single release.  Enforce the
+# minimum explicitly instead.
+set(G4OCCT_MIN_OCCT_VERSION 8.0)
 find_package(OpenCASCADE REQUIRED)
+if(OpenCASCADE_VERSION VERSION_LESS G4OCCT_MIN_OCCT_VERSION)
+  message(
+    FATAL_ERROR
+      "G4OCCT requires OpenCASCADE >= ${G4OCCT_MIN_OCCT_VERSION}, found ${OpenCASCADE_VERSION}"
+  )
+endif()
 
 option(BUILD_ROOT_TGEO_SUPPORT "Build public ROOT/TGeo solid adapter support"
        OFF)

@@ -200,7 +200,7 @@ currently recomputed on every call rather than cached at construction time.
 ### 2.7 `CreatePolyhedron` — Incremental Mesh
 
 ```cpp
-BRepMesh_IncrementalMesh mesher(fShape, kRelativeDeflection, Standard_True);
+BRepMesh_IncrementalMesh mesher(fShape, kRelativeDeflection, true);
 ```
 
 `CreatePolyhedron` is called infrequently (visualisation only), but it

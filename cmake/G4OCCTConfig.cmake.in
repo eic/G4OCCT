@@ -13,6 +13,13 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(Geant4 REQUIRED)
 find_dependency(OpenCASCADE REQUIRED)
+# OCCT's version file uses ExactVersion; check the minimum explicitly.
+if(OpenCASCADE_VERSION VERSION_LESS @G4OCCT_MIN_OCCT_VERSION@)
+  set(G4OCCT_FOUND FALSE)
+  set(G4OCCT_NOT_FOUND_MESSAGE
+      "G4OCCT requires OpenCASCADE >= @G4OCCT_MIN_OCCT_VERSION@, found ${OpenCASCADE_VERSION}")
+  return()
+endif()
 if(@BUILD_ROOT_TGEO_SUPPORT@)
   find_dependency(ROOT REQUIRED COMPONENTS Geom)
 endif()

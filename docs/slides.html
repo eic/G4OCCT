@@ -144,7 +144,7 @@ find_package(G4OCCT REQUIRED)
 target_link_libraries(myApp PRIVATE G4OCCT::G4OCCT)
 ```
 
-Dependencies (`Geant4 ≥ 11.3`, `OCCT ≥ 7.8`) propagate automatically.
+Dependencies (`Geant4 ≥ 11.3`, `OCCT ≥ 8.0`) propagate automatically.
 
 ---
 
@@ -498,7 +498,7 @@ cmake -S G4OCCT -B build \
 cmake --build build -- -j$(nproc)
 ctest --test-dir build
 ```
-Requirements: **CMake ≥ 3.16**, **Geant4 ≥ 11.3**, **OCCT ≥ 7.8**
+Requirements: **CMake ≥ 3.16**, **Geant4 ≥ 11.3**, **OCCT ≥ 8.0**
 ]
 .box.box-blue[
 ### Contribute

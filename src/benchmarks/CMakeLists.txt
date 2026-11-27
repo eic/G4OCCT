@@ -104,11 +104,14 @@ find_path(
 if(VALGRIND_INCLUDE_DIR)
   message(STATUS "Found valgrind/callgrind.h in: ${VALGRIND_INCLUDE_DIR}")
   target_compile_definitions(bench_callgrind PRIVATE HAVE_VALGRIND_CALLGRIND_H)
-  target_include_directories(bench_callgrind PRIVATE "${VALGRIND_INCLUDE_DIR}")
+  # SYSTEM AFTER: the valgrind dir (e.g. /opt/local/include) may also hold an
+  # installed G4OCCT; it must not shadow the in-tree headers.
+  target_include_directories(bench_callgrind SYSTEM AFTER
+                             PRIVATE "${VALGRIND_INCLUDE_DIR}")
   if(TARGET bench_assembly_navigator)
     target_compile_definitions(bench_assembly_navigator
                                PRIVATE HAVE_VALGRIND_CALLGRIND_H)
-    target_include_directories(bench_assembly_navigator
+    target_include_directories(bench_assembly_navigator SYSTEM AFTER
                                PRIVATE "${VALGRIND_INCLUDE_DIR}")
   endif()
 else()

@@ -96,7 +96,7 @@ TopoDS_Shape CenterShape(const TopoDS_Shape& shape) {
   BRepBndLib::Add(shape, bbox);
   if (bbox.IsVoid()) return shape;
 
-  Standard_Real xmin, ymin, zmin, xmax, ymax, zmax;
+  double xmin, ymin, zmin, xmax, ymax, zmax;
   bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
 
   gp_Trsf trsf;
@@ -270,7 +270,7 @@ TopoDS_Shape rawShape = reader.OneShape();
 // ── Recenter ───────────────────────────────────────────────────────────────
 Bnd_Box bbox;
 BRepBndLib::Add(rawShape, bbox);
-Standard_Real xmin, ymin, zmin, xmax, ymax, zmax;
+double xmin, ymin, zmin, xmax, ymax, zmax;
 bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
 gp_Trsf centerTrsf;
 centerTrsf.SetTranslation(gp_Vec(

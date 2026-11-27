@@ -85,7 +85,7 @@ G4OCCTSolid* G4OCCTSolid::FromSTEP(const G4String& name, const std::string& path
     throw std::runtime_error("G4OCCTSolid::FromSTEP: failed to read STEP file \"" + path + "\"");
   }
 
-  const Standard_Integer nRoots = reader.NbRootsForTransfer();
+  const int nRoots = reader.NbRootsForTransfer();
   if (nRoots == 0) {
     throw std::runtime_error("G4OCCTSolid::FromSTEP: STEP file \"" + path +
                              "\" contains no root "
@@ -190,7 +190,7 @@ G4Polyhedron* G4OCCTSolid::CreatePolyhedron() const {
   std::unique_ptr<G4Polyhedron> freshPolyhedron;
   try {
     BRepMesh_IncrementalMesh mesher(fImpl->kernel.Shape(), g4occt::detail::kOCCTRelativeDeflection,
-                                    /*isRelative=*/Standard_True);
+                                    /*isRelative=*/true);
     (void)mesher;
 
     G4TessellatedSolid tessellatedSolid(GetName() + "_polyhedron");
@@ -208,11 +208,10 @@ G4Polyhedron* G4OCCTSolid::CreatePolyhedron() const {
       const gp_Trsf& transform  = location.Transformation();
       const bool reverseWinding = face.Orientation() == TopAbs_REVERSED;
 
-      for (Standard_Integer triangleIndex = 1; triangleIndex <= triangulation->NbTriangles();
-           ++triangleIndex) {
-        Standard_Integer index1 = 0;
-        Standard_Integer index2 = 0;
-        Standard_Integer index3 = 0;
+      for (int triangleIndex = 1; triangleIndex <= triangulation->NbTriangles(); ++triangleIndex) {
+        int index1 = 0;
+        int index2 = 0;
+        int index3 = 0;
         triangulation->Triangle(triangleIndex).Get(index1, index2, index3);
 
         if (reverseWinding) {

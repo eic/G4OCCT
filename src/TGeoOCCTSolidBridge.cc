@@ -133,7 +133,7 @@ std::unique_ptr<TGeoOCCTSolidBridge> TGeoOCCTSolidBridge::FromSTEP(const std::st
     throw std::runtime_error("TGeoOCCTSolidBridge::FromSTEP: STEP file \"" + path +
                              "\" contains no root shapes");
   }
-  const Standard_Integer transferredRoots = reader.TransferRoots();
+  const int transferredRoots = reader.TransferRoots();
   if (transferredRoots == 0) {
     throw std::runtime_error(
         "TGeoOCCTSolidBridge::FromSTEP: STEP transfer produced no shapes for \"" + path + "\"");
