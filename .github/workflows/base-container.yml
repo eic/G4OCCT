@@ -23,6 +23,11 @@ on:
 env:
   ARCHES: "amd64 arm64"
   BASE_OS_IMAGE: "ubuntu:24.04"
+  # Spack builds on the runner host and the result is copied into
+  # BASE_OS_IMAGE, so the runner OS must match it (same glibc).  Keep the
+  # matrix `runner:` values below in sync (runs-on cannot read env).  Part of
+  # the cache-tag hash so a runner change never reuses an incompatible layer.
+  BUILD_HOST_OS: "ubuntu-24.04"
 
 jobs:
   build-base:
@@ -31,7 +36,9 @@ jobs:
       matrix:
         include:
           - arch: amd64
-            runner: ubuntu-latest
+            # Not ubuntu-latest: that moved to 26.04 (glibc 2.43), producing
+            # binaries that fail to link in the ubuntu:24.04 base image.
+            runner: ubuntu-24.04
             spack_target: x86_64_v2
           - arch: arm64
             runner: ubuntu-24.04-arm
@@ -57,7 +64,7 @@ jobs:
       - name: Compute spack environment hash
         id: spack-hash
         run: |
-          HASH_INPUT="$(sha256sum .github/spack.yaml | cut -d' ' -f1)-${{ env.BASE_OS_IMAGE }}"
+          HASH_INPUT="$(sha256sum .github/spack.yaml | cut -d' ' -f1)-${{ env.BASE_OS_IMAGE }}-${{ env.BUILD_HOST_OS }}"
           echo "tag=spack-$(printf '%s' "$HASH_INPUT" | sha256sum | cut -c1-8)-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
 
       - name: Check GHCR for cached base image
@@ -141,7 +148,7 @@ jobs:
       - name: Compute spack environment hash
         id: spack-hash
         run: |
-          HASH_INPUT="$(sha256sum .github/spack.yaml | cut -d' ' -f1)-${{ env.BASE_OS_IMAGE }}"
+          HASH_INPUT="$(sha256sum .github/spack.yaml | cut -d' ' -f1)-${{ env.BASE_OS_IMAGE }}-${{ env.BUILD_HOST_OS }}"
           echo "hash=$(printf '%s' "$HASH_INPUT" | sha256sum | cut -c1-8)" >> "$GITHUB_OUTPUT"
 
       - name: Create and push multi-arch base manifests
