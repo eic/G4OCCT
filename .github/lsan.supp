@@ -166,3 +166,10 @@ leak:FixtureDetectorConstruction::Construct
 # G4JpegCoder::DoCoding() allocates internal JPEG coding buffers in libG4RayTracer
 # that are never freed.  This is an upstream Geant4 issue.
 leak:G4JpegCoder::DoCoding
+
+# ── ROOT TGeoTessellated BVH (ROOT 6.40+) ────────────────────────────────────
+# TGeoTessellated::BuildBVH() allocates BVH nodes that the TGeoTessellated
+# destructor does not free.  TGeoOCCTSolid owns its display helper through a
+# std::unique_ptr (fDisplayHelper), and LSAN reports only the BVH allocations,
+# not the TGeoTessellated itself, so the leak is inside ROOT.  Upstream issue.
+leak:TGeoTessellated::BuildBVH
