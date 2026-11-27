@@ -54,66 +54,62 @@
 
 namespace {
 
-class PointToMeshDistance
-    : public BVH_Distance<Standard_Real, 3, BVH_Vec3d, BRepExtrema_TriangleSet> {
+class PointToMeshDistance : public BVH_Distance<double, 3, BVH_Vec3d, BRepExtrema_TriangleSet> {
 public:
-  Standard_Boolean RejectNode(const BVH_Vec3d& theCornerMin, const BVH_Vec3d& theCornerMax,
-                              Standard_Real& theMetric) const override {
-    theMetric =
-        BVH_Tools<Standard_Real, 3>::PointBoxSquareDistance(myObject, theCornerMin, theCornerMax);
+  bool RejectNode(const BVH_Vec3d& theCornerMin, const BVH_Vec3d& theCornerMax,
+                  double& theMetric) const override {
+    theMetric = BVH_Tools<double, 3>::PointBoxSquareDistance(myObject, theCornerMin, theCornerMax);
     return RejectMetric(theMetric);
   }
 
-  Standard_Boolean Accept(const Standard_Integer theIndex, const Standard_Real&) override {
+  bool Accept(const int theIndex, const double&) override {
     BVH_Vec3d v0, v1, v2;
     myBVHSet->GetVertices(theIndex, v0, v1, v2);
-    const Standard_Real sq =
-        BVH_Tools<Standard_Real, 3>::PointTriangleSquareDistance(myObject, v0, v1, v2);
+    const double sq = BVH_Tools<double, 3>::PointTriangleSquareDistance(myObject, v0, v1, v2);
     if (sq < myDistance) {
       myDistance  = sq;
       myBestIndex = theIndex;
-      return Standard_True;
+      return true;
     }
-    return Standard_False;
+    return false;
   }
 
-  Standard_Integer BestIndex() const { return myBestIndex; }
+  int BestIndex() const { return myBestIndex; }
 
 private:
-  Standard_Integer myBestIndex{-1};
+  int myBestIndex{-1};
 };
 
-class TriangleRayCast
-    : public BVH_Traverse<Standard_Real, 3, BRepExtrema_TriangleSet, Standard_Real> {
+class TriangleRayCast : public BVH_Traverse<double, 3, BRepExtrema_TriangleSet, double> {
 public:
-  void SetRay(const BVH_Vec3d& theOrigin, const BVH_Vec3d& theDir, Standard_Real theTolerance) {
+  void SetRay(const BVH_Vec3d& theOrigin, const BVH_Vec3d& theDir, double theTolerance) {
     myOrigin     = theOrigin;
     myDir        = theDir;
     myTolerance  = theTolerance;
     myCrossings  = 0;
-    myDegenerate = Standard_False;
+    myDegenerate = false;
   }
 
-  Standard_Boolean RejectNode(const BVH_Vec3d& theCornerMin, const BVH_Vec3d& theCornerMax,
-                              Standard_Real& theMetric) const override {
-    Standard_Real tmin = 0.0;
-    Standard_Real tmax = Precision::Infinite();
+  bool RejectNode(const BVH_Vec3d& theCornerMin, const BVH_Vec3d& theCornerMax,
+                  double& theMetric) const override {
+    double tmin = 0.0;
+    double tmax = Precision::Infinite();
     for (int k = 0; k < 3; ++k) {
-      const Standard_Real dk     = (k == 0) ? myDir.x() : (k == 1) ? myDir.y() : myDir.z();
-      const Standard_Real ok     = (k == 0) ? myOrigin.x() : (k == 1) ? myOrigin.y() : myOrigin.z();
-      const Standard_Real ck_min = (k == 0)   ? theCornerMin.x()
-                                   : (k == 1) ? theCornerMin.y()
-                                              : theCornerMin.z();
-      const Standard_Real ck_max = (k == 0)   ? theCornerMax.x()
-                                   : (k == 1) ? theCornerMax.y()
-                                              : theCornerMax.z();
+      const double dk     = (k == 0) ? myDir.x() : (k == 1) ? myDir.y() : myDir.z();
+      const double ok     = (k == 0) ? myOrigin.x() : (k == 1) ? myOrigin.y() : myOrigin.z();
+      const double ck_min = (k == 0)   ? theCornerMin.x()
+                            : (k == 1) ? theCornerMin.y()
+                                       : theCornerMin.z();
+      const double ck_max = (k == 0)   ? theCornerMax.x()
+                            : (k == 1) ? theCornerMax.y()
+                                       : theCornerMax.z();
       if (std::abs(dk) < Precision::Confusion()) {
         if (ok < ck_min - myTolerance || ok > ck_max + myTolerance) {
-          return Standard_True;
+          return true;
         }
       } else {
-        const Standard_Real t1 = (ck_min - ok) / dk;
-        const Standard_Real t2 = (ck_max - ok) / dk;
+        const double t1 = (ck_min - ok) / dk;
+        const double t2 = (ck_max - ok) / dk;
         if (t1 > tmin) {
           tmin = t1;
         }
@@ -121,59 +117,59 @@ public:
           tmax = t2;
         }
         if (tmin > tmax + myTolerance) {
-          return Standard_True;
+          return true;
         }
       }
     }
     theMetric = tmin;
-    return Standard_False;
+    return false;
   }
 
-  Standard_Boolean Accept(const Standard_Integer theIndex, const Standard_Real&) override {
+  bool Accept(const int theIndex, const double&) override {
     BVH_Vec3d v0, v1, v2;
     myBVHSet->GetVertices(theIndex, v0, v1, v2);
     const BVH_Vec3d edge1 = v1 - v0;
     const BVH_Vec3d edge2 = v2 - v0;
     const BVH_Vec3d h     = BVH_Vec3d::Cross(myDir, edge2);
-    const Standard_Real a = edge1.Dot(h);
+    const double a        = edge1.Dot(h);
     if (std::abs(a) < 1e-12) {
-      return Standard_False;
+      return false;
     }
-    const Standard_Real f = 1.0 / a;
-    const BVH_Vec3d s     = myOrigin - v0;
-    const Standard_Real u = f * s.Dot(h);
+    const double f    = 1.0 / a;
+    const BVH_Vec3d s = myOrigin - v0;
+    const double u    = f * s.Dot(h);
     if (u < 0.0 || u > 1.0) {
-      return Standard_False;
+      return false;
     }
-    const BVH_Vec3d q     = BVH_Vec3d::Cross(s, edge1);
-    const Standard_Real v = f * myDir.Dot(q);
+    const BVH_Vec3d q = BVH_Vec3d::Cross(s, edge1);
+    const double v    = f * myDir.Dot(q);
     if (v < 0.0 || u + v > 1.0) {
-      return Standard_False;
+      return false;
     }
-    const Standard_Real t = f * edge2.Dot(q);
+    const double t = f * edge2.Dot(q);
     if (t < -myTolerance) {
-      return Standard_False;
+      return false;
     }
     ++myCrossings;
-    constexpr Standard_Real kEdgeTol = 1e-6;
+    constexpr double kEdgeTol = 1e-6;
     if (u < kEdgeTol || v < kEdgeTol || (1.0 - u - v) < kEdgeTol) {
-      myDegenerate = Standard_True;
+      myDegenerate = true;
     }
-    return Standard_True;
+    return true;
   }
 
-  Standard_Boolean RejectMetric(const Standard_Real&) const override { return Standard_False; }
-  Standard_Boolean Stop() const override { return Standard_False; }
+  bool RejectMetric(const double&) const override { return false; }
+  bool Stop() const override { return false; }
 
   int Crossings() const { return myCrossings; }
-  Standard_Boolean Degenerate() const { return myDegenerate; }
+  bool Degenerate() const { return myDegenerate; }
 
 private:
   BVH_Vec3d myOrigin;
   BVH_Vec3d myDir;
-  Standard_Real myTolerance{1e-7};
+  double myTolerance{1e-7};
   int myCrossings{0};
-  Standard_Boolean myDegenerate{Standard_False};
+  bool myDegenerate{false};
 };
 
 gp_Pnt ToPoint(const G4ThreeVector& point) { return gp_Pnt(point.x(), point.y(), point.z()); }
@@ -205,16 +201,16 @@ ToPointClassification(const TopAbs_State state) {
 
 G4ThreeVector FallbackNormal() { return G4ThreeVector(0.0, 0.0, 1.0); }
 
-bool PointInPolygon2d(Standard_Real u, Standard_Real v, const std::vector<gp_Pnt2d>& poly) {
+bool PointInPolygon2d(double u, double v, const std::vector<gp_Pnt2d>& poly) {
   const std::size_t n = poly.size();
   int crossings       = 0;
   for (std::size_t i = 0; i < n; ++i) {
-    const gp_Pnt2d& a      = poly[i];
-    const gp_Pnt2d& b      = poly[(i + 1) % n];
-    const Standard_Real av = a.Y();
-    const Standard_Real bv = b.Y();
+    const gp_Pnt2d& a = poly[i];
+    const gp_Pnt2d& b = poly[(i + 1) % n];
+    const double av   = a.Y();
+    const double bv   = b.Y();
     if ((av <= v && bv > v) || (bv <= v && av > v)) {
-      const Standard_Real uCross = a.X() + (v - av) * (b.X() - a.X()) / (bv - av);
+      const double uCross = a.X() + (v - av) * (b.X() - a.X()) / (bv - av);
       if (u < uCross) {
         ++crossings;
       }
@@ -223,28 +219,27 @@ bool PointInPolygon2d(Standard_Real u, Standard_Real v, const std::vector<gp_Pnt
   return (crossings % 2) == 1;
 }
 
-bool PointOnPolygonBoundary2d(Standard_Real u, Standard_Real v, const std::vector<gp_Pnt2d>& poly,
-                              Standard_Real tol) {
-  const Standard_Real tol2 = tol * tol;
-  const std::size_t n      = poly.size();
+bool PointOnPolygonBoundary2d(double u, double v, const std::vector<gp_Pnt2d>& poly, double tol) {
+  const double tol2   = tol * tol;
+  const std::size_t n = poly.size();
   for (std::size_t i = 0; i < n; ++i) {
-    const gp_Pnt2d& a        = poly[i];
-    const gp_Pnt2d& b        = poly[(i + 1) % n];
-    const Standard_Real dx   = b.X() - a.X();
-    const Standard_Real dy   = b.Y() - a.Y();
-    const Standard_Real len2 = dx * dx + dy * dy;
-    Standard_Real px         = 0.0;
-    Standard_Real py         = 0.0;
+    const gp_Pnt2d& a = poly[i];
+    const gp_Pnt2d& b = poly[(i + 1) % n];
+    const double dx   = b.X() - a.X();
+    const double dy   = b.Y() - a.Y();
+    const double len2 = dx * dx + dy * dy;
+    double px         = 0.0;
+    double py         = 0.0;
     if (len2 < 1.0e-20) {
       px = a.X();
       py = a.Y();
     } else {
-      const Standard_Real t_seg =
+      const double t_seg =
           std::max(0.0, std::min(1.0, ((u - a.X()) * dx + (v - a.Y()) * dy) / len2));
       px = a.X() + t_seg * dx;
       py = a.Y() + t_seg * dy;
     }
-    const Standard_Real dist2 = (u - px) * (u - px) + (v - py) * (v - py);
+    const double dist2 = (u - px) * (u - px) + (v - py) * (v - py);
     if (dist2 <= tol2) {
       return true;
     }
@@ -252,31 +247,30 @@ bool PointOnPolygonBoundary2d(Standard_Real u, Standard_Real v, const std::vecto
   return false;
 }
 
-std::optional<Standard_Real> RayPlaneFaceHit(const gp_Lin& ray, const gp_Pln& plane,
-                                             const std::vector<gp_Pnt2d>& uvPoly,
-                                             Standard_Real tMin, Standard_Real tolerance,
-                                             Standard_Real* u_out = nullptr,
-                                             Standard_Real* v_out = nullptr) {
+std::optional<double> RayPlaneFaceHit(const gp_Lin& ray, const gp_Pln& plane,
+                                      const std::vector<gp_Pnt2d>& uvPoly, double tMin,
+                                      double tolerance, double* u_out = nullptr,
+                                      double* v_out = nullptr) {
   const gp_Dir& lineDir   = ray.Direction();
   const gp_Dir& plnNormal = plane.Axis().Direction();
-  const Standard_Real denom =
+  const double denom =
       plnNormal.X() * lineDir.X() + plnNormal.Y() * lineDir.Y() + plnNormal.Z() * lineDir.Z();
   if (std::abs(denom) < 1.0e-10) {
     return std::nullopt;
   }
-  const gp_Pnt& orig        = ray.Location();
-  const gp_Pnt& planePt     = plane.Location();
-  const Standard_Real numer = plnNormal.X() * (planePt.X() - orig.X()) +
-                              plnNormal.Y() * (planePt.Y() - orig.Y()) +
-                              plnNormal.Z() * (planePt.Z() - orig.Z());
-  const Standard_Real t     = numer / denom;
+  const gp_Pnt& orig    = ray.Location();
+  const gp_Pnt& planePt = plane.Location();
+  const double numer    = plnNormal.X() * (planePt.X() - orig.X()) +
+                          plnNormal.Y() * (planePt.Y() - orig.Y()) +
+                          plnNormal.Z() * (planePt.Z() - orig.Z());
+  const double t        = numer / denom;
   if (t < tMin) {
     return std::nullopt;
   }
   const gp_Pnt hitPt(orig.X() + t * lineDir.X(), orig.Y() + t * lineDir.Y(),
                      orig.Z() + t * lineDir.Z());
-  Standard_Real u = 0.0;
-  Standard_Real v = 0.0;
+  double u = 0.0;
+  double v = 0.0;
   ElSLib::PlaneParameters(plane.Position(), hitPt, u, v);
   if (!PointInPolygon2d(u, v, uvPoly) && !PointOnPolygonBoundary2d(u, v, uvPoly, tolerance)) {
     return std::nullopt;
@@ -291,15 +285,15 @@ std::optional<Standard_Real> RayPlaneFaceHit(const gp_Lin& ray, const gp_Pln& pl
 }
 
 std::optional<G4ThreeVector> TryGetOutwardNormal(const BRepAdaptor_Surface& surface,
-                                                 const TopoDS_Face& face, const Standard_Real u,
-                                                 const Standard_Real v) {
-  Standard_Real adjustedU       = u;
-  Standard_Real adjustedV       = v;
-  const Standard_Real tolerance = IntersectionTolerance();
+                                                 const TopoDS_Face& face, const double u,
+                                                 const double v) {
+  double adjustedU       = u;
+  double adjustedV       = v;
+  const double tolerance = IntersectionTolerance();
   {
-    const Standard_Real uFirst   = surface.FirstUParameter();
-    const Standard_Real uLast    = surface.LastUParameter();
-    const Standard_Real uEpsilon = std::min(
+    const double uFirst   = surface.FirstUParameter();
+    const double uLast    = surface.LastUParameter();
+    const double uEpsilon = std::min(
         std::max(surface.UResolution(tolerance), Precision::PConfusion()), 0.5 * (uLast - uFirst));
     if (std::abs(adjustedU - uFirst) <= uEpsilon) {
       adjustedU = std::min(uFirst + uEpsilon, uLast);
@@ -308,9 +302,9 @@ std::optional<G4ThreeVector> TryGetOutwardNormal(const BRepAdaptor_Surface& surf
     }
   }
   {
-    const Standard_Real vFirst   = surface.FirstVParameter();
-    const Standard_Real vLast    = surface.LastVParameter();
-    const Standard_Real vEpsilon = std::min(
+    const double vFirst   = surface.FirstVParameter();
+    const double vLast    = surface.LastVParameter();
+    const double vEpsilon = std::min(
         std::max(surface.VResolution(tolerance), Precision::PConfusion()), 0.5 * (vLast - vFirst));
     if (std::abs(adjustedV - vFirst) <= vEpsilon) {
       adjustedV = std::min(vFirst + vEpsilon, vLast);
@@ -321,15 +315,15 @@ std::optional<G4ThreeVector> TryGetOutwardNormal(const BRepAdaptor_Surface& surf
 
   BRepLProp_SLProps props(surface, adjustedU, adjustedV, 1, tolerance);
   if (!props.IsNormalDefined()) {
-    const Standard_Real vFirst = surface.FirstVParameter();
-    const Standard_Real vLast  = surface.LastVParameter();
-    const Standard_Real vMid   = 0.5 * (vFirst + vLast);
-    const bool nearVFirst      = (adjustedV < vMid);
-    const Standard_Real vRes   = std::max(surface.VResolution(tolerance), Precision::PConfusion());
-    Standard_Real finalRetryV  = adjustedV;
+    const double vFirst   = surface.FirstVParameter();
+    const double vLast    = surface.LastVParameter();
+    const double vMid     = 0.5 * (vFirst + vLast);
+    const bool nearVFirst = (adjustedV < vMid);
+    const double vRes     = std::max(surface.VResolution(tolerance), Precision::PConfusion());
+    double finalRetryV    = adjustedV;
     for (int attempt = 0; attempt < 8 && !props.IsNormalDefined(); ++attempt) {
-      const Standard_Real scale = std::pow(10.0, static_cast<Standard_Real>(attempt));
-      const Standard_Real nudge = scale * vRes;
+      const double scale = std::pow(10.0, static_cast<double>(attempt));
+      const double nudge = scale * vRes;
       finalRetryV =
           nearVFirst ? std::min(adjustedV + nudge, vMid) : std::max(adjustedV - nudge, vMid);
       props = BRepLProp_SLProps(surface, adjustedU, finalRetryV, 1, tolerance);
@@ -337,7 +331,7 @@ std::optional<G4ThreeVector> TryGetOutwardNormal(const BRepAdaptor_Surface& surf
     if (!props.IsNormalDefined()) {
       return std::nullopt;
     }
-    constexpr Standard_Real kMaxRetryVDriftFraction = 0.10;
+    constexpr double kMaxRetryVDriftFraction = 0.10;
     if (std::fabs(finalRetryV - adjustedV) > kMaxRetryVDriftFraction * (vLast - vFirst)) {
       return std::nullopt;
     }
@@ -400,18 +394,18 @@ void G4OCCTSolidKernel::ComputeBounds() {
   }
 
   Bnd_Box boundingBox;
-  BRepBndLib::AddOptimal(fShape, boundingBox, /*useTriangulation=*/Standard_False);
+  BRepBndLib::AddOptimal(fShape, boundingBox, /*useTriangulation=*/false);
   if (boundingBox.IsVoid()) {
     throw std::invalid_argument(
         "G4OCCTSolidKernel: shape has no computable bounding box (no geometry)");
   }
 
-  Standard_Real xMin = 0.0;
-  Standard_Real yMin = 0.0;
-  Standard_Real zMin = 0.0;
-  Standard_Real xMax = 0.0;
-  Standard_Real yMax = 0.0;
-  Standard_Real zMax = 0.0;
+  double xMin = 0.0;
+  double yMin = 0.0;
+  double zMin = 0.0;
+  double xMax = 0.0;
+  double yMax = 0.0;
+  double zMax = 0.0;
   boundingBox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
   fCachedBounds =
       AxisAlignedBounds{G4ThreeVector(xMin, yMin, zMin), G4ThreeVector(xMax, yMax, zMax)};
@@ -420,7 +414,7 @@ void G4OCCTSolidKernel::ComputeBounds() {
   G4double maxFaceDiag = 0.0;
   for (TopExp_Explorer ex(fShape, TopAbs_FACE); ex.More(); ex.Next()) {
     Bnd_Box faceBox;
-    BRepBndLib::AddOptimal(ex.Current(), faceBox, /*useTriangulation=*/Standard_False);
+    BRepBndLib::AddOptimal(ex.Current(), faceBox, /*useTriangulation=*/false);
     const TopoDS_Face& currentFace = TopoDS::Face(ex.Current());
     BRepAdaptor_Surface adaptor(currentFace);
     std::optional<gp_Pln> maybePlane;
@@ -443,8 +437,8 @@ void G4OCCTSolidKernel::ComputeBounds() {
             break;
           }
           const gp_Pnt pt = BRep_Tool::Pnt(we.CurrentVertex());
-          Standard_Real u = 0.0;
-          Standard_Real v = 0.0;
+          double u        = 0.0;
+          double v        = 0.0;
           ElSLib::PlaneParameters(pos, pt, u, v);
           poly.emplace_back(u, v);
         }
@@ -470,12 +464,12 @@ void G4OCCTSolidKernel::ComputeBounds() {
     fFaceBoundsCache.push_back({currentFace, faceBox, std::move(adaptor), std::move(maybePlane),
                                 std::move(uvPolygon), std::move(outwardNormal)});
     if (!faceBox.IsVoid()) {
-      Standard_Real fx0 = 0.0;
-      Standard_Real fy0 = 0.0;
-      Standard_Real fz0 = 0.0;
-      Standard_Real fx1 = 0.0;
-      Standard_Real fy1 = 0.0;
-      Standard_Real fz1 = 0.0;
+      double fx0 = 0.0;
+      double fy0 = 0.0;
+      double fz0 = 0.0;
+      double fx1 = 0.0;
+      double fy1 = 0.0;
+      double fz1 = 0.0;
       faceBox.Get(fx0, fy0, fz0, fx1, fy1, fz1);
       const G4double diag = G4ThreeVector(fx1 - fx0, fy1 - fy0, fz1 - fz0).mag();
       maxFaceDiag         = std::max(maxFaceDiag, diag);
@@ -488,7 +482,7 @@ void G4OCCTSolidKernel::ComputeBounds() {
 
   {
     [[maybe_unused]] const BRepMesh_IncrementalMesh mesher(fShape, kOCCTRelativeDeflection,
-                                                           /*isRelative=*/Standard_True);
+                                                           /*isRelative=*/true);
   }
 
   NCollection_Vector<TopoDS_Shape> faces;
@@ -505,8 +499,8 @@ void G4OCCTSolidKernel::ComputeBounds() {
     for (const FaceBounds& fb : fFaceBoundsCache) {
       G4double deflection = fBVHDeflection;
       if (!fb.box.IsVoid()) {
-        Standard_Real fx0 = 0.0, fy0 = 0.0, fz0 = 0.0;
-        Standard_Real fx1 = 0.0, fy1 = 0.0, fz1 = 0.0;
+        double fx0 = 0.0, fy0 = 0.0, fz0 = 0.0;
+        double fx1 = 0.0, fy1 = 0.0, fz1 = 0.0;
         fb.box.Get(fx0, fy0, fz0, fx1, fy1, fz1);
         const G4double faceDiag = G4ThreeVector(fx1 - fx0, fy1 - fy0, fz1 - fz0).mag();
         deflection              = kOCCTRelativeDeflection * faceDiag;
@@ -600,8 +594,8 @@ G4OCCTSolidKernel::TryFindClosestFace(const std::vector<FaceBounds>& faceBoundsC
     }
     ClosestFaceMatch match{.face = fb.face, .distance = candidateDistance, .faceIndex = i};
     if (distance.NbSolution() > 0 && distance.SupportTypeShape2(1) == BRepExtrema_IsInFace) {
-      Standard_Real u = 0.0;
-      Standard_Real v = 0.0;
+      double u = 0.0;
+      double v = 0.0;
       distance.ParOnFaceS2(1, u, v);
       match.uv = std::make_pair(u, v);
     }
@@ -719,7 +713,7 @@ G4OCCTSolidKernel::ClassifyPoint(const G4ThreeVector& p, ClassifierCache& classi
     }
 
     const BVH_Vec3d bvhOrigin(p.x(), p.y(), p.z());
-    const Standard_Real bvhTol = static_cast<Standard_Real>(tolerance);
+    const double bvhTol = static_cast<double>(tolerance);
     TriangleRayCast caster;
     caster.SetBVHSet(fTriangleSet.get());
     caster.SetRay(bvhOrigin, BVH_Vec3d(0.0, 0.0, 1.0), bvhTol);
@@ -785,8 +779,8 @@ G4OCCTSolidKernel::ClassifyPoint(const G4ThreeVector& p, ClassifierCache& classi
     if (!fb.uvPolygon.empty()) {
       // Fast path for single-wire planar faces: intersect the analytical plane
       // and then test the hit against the cached 2D polygon in face space.
-      Standard_Real u_hit = 0.0;
-      Standard_Real v_hit = 0.0;
+      double u_hit = 0.0;
+      double v_hit = 0.0;
       const auto t =
           RayPlaneFaceHit(ray, *fb.plane, fb.uvPolygon, -tolerance, tolerance, &u_hit, &v_hit);
       if (t) {
@@ -807,7 +801,7 @@ G4OCCTSolidKernel::ClassifyPoint(const G4ThreeVector& p, ClassifierCache& classi
       if (!fi.IsDone()) {
         continue;
       }
-      for (Standard_Integer j = 1; j <= fi.NbPnt(); ++j) {
+      for (int j = 1; j <= fi.NbPnt(); ++j) {
         const G4double w         = fi.WParameter(j);
         const TopAbs_State state = fi.State(j);
         if (std::abs(w) <= tolerance && (state == TopAbs_IN || state == TopAbs_ON)) {
@@ -866,8 +860,8 @@ G4ThreeVector G4OCCTSolidKernel::SurfaceNormal(const G4ThreeVector& p) const {
     if (projection.NbPoints() == 0) {
       return FallbackNormal();
     }
-    Standard_Real u = 0.0;
-    Standard_Real v = 0.0;
+    double u = 0.0;
+    double v = 0.0;
     projection.LowerDistanceParameters(u, v);
     return TryGetOutwardNormal(fb.adaptor, fb.face, u, v).value_or(FallbackNormal());
   };
@@ -921,7 +915,7 @@ G4double G4OCCTSolidKernel::DistanceToIn(const G4ThreeVector& p, const G4ThreeVe
       if (!fi.IsDone()) {
         continue;
       }
-      for (Standard_Integer j = 1; j <= fi.NbPnt(); ++j) {
+      for (int j = 1; j <= fi.NbPnt(); ++j) {
         const G4double w = fi.WParameter(j);
         if (w > tolerance && w < minDistance) {
           minDistance = w;
@@ -963,16 +957,16 @@ G4double G4OCCTSolidKernel::BVHLowerBoundDistance(const G4ThreeVector& p) const 
   PointToMeshDistance solver;
   solver.SetObject(BVH_Vec3d(p.x(), p.y(), p.z()));
   solver.SetBVHSet(fTriangleSet.get());
-  const Standard_Real meshDistSq = solver.ComputeDistance();
+  const double meshDistSq = solver.ComputeDistance();
   if (!solver.IsDone()) {
     return G4OCCTSolidKernel::Infinity();
   }
   const G4double meshDist = std::sqrt(static_cast<G4double>(meshDistSq));
 
-  G4double deflection            = fBVHDeflection;
-  const Standard_Integer bestIdx = solver.BestIndex();
+  G4double deflection = fBVHDeflection;
+  const int bestIdx   = solver.BestIndex();
   if (bestIdx >= 0) {
-    const Standard_Integer faceId = fTriangleSet->GetFaceID(bestIdx);
+    const int faceId = fTriangleSet->GetFaceID(bestIdx);
     if (faceId >= 0 && static_cast<std::size_t>(faceId) < fFaceDeflections.size()) {
       deflection = fFaceDeflections[static_cast<std::size_t>(faceId)];
     }
@@ -1053,7 +1047,7 @@ G4double G4OCCTSolidKernel::DistanceToOut(const G4ThreeVector& p, const G4ThreeV
       if (!fi.IsDone()) {
         continue;
       }
-      for (Standard_Integer j = 1; j <= fi.NbPnt(); ++j) {
+      for (int j = 1; j <= fi.NbPnt(); ++j) {
         const G4double w = fi.WParameter(j);
         if (w > tolerance && w < minDistance) {
           minDistance   = w;
@@ -1156,7 +1150,7 @@ const G4OCCTSolidKernel::SurfaceSamplingCache& G4OCCTSolidKernel::GetOrBuildSurf
 
   SurfaceSamplingCache cache;
   try {
-    BRepMesh_IncrementalMesh mesher(fShape, kOCCTRelativeDeflection, /*isRelative=*/Standard_True);
+    BRepMesh_IncrementalMesh mesher(fShape, kOCCTRelativeDeflection, /*isRelative=*/true);
     (void)mesher;
 
     for (TopExp_Explorer ex(fShape, TopAbs_FACE); ex.More(); ex.Next()) {
@@ -1173,10 +1167,10 @@ const G4OCCTSolidKernel::SurfaceSamplingCache& G4OCCTSolidKernel::GetOrBuildSurf
       const gp_Trsf& transform  = loc.Transformation();
       const bool reverseWinding = face.Orientation() == TopAbs_REVERSED;
 
-      for (Standard_Integer i = 1; i <= triangulation->NbTriangles(); ++i) {
-        Standard_Integer idx1 = 0;
-        Standard_Integer idx2 = 0;
-        Standard_Integer idx3 = 0;
+      for (int i = 1; i <= triangulation->NbTriangles(); ++i) {
+        int idx1 = 0;
+        int idx2 = 0;
+        int idx3 = 0;
         triangulation->Triangle(i).Get(idx1, idx2, idx3);
         if (reverseWinding) {
           std::swap(idx2, idx3);

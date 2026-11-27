@@ -38,7 +38,8 @@
 #include <IFSelect_ReturnStatus.hxx>
 #include <STEPCAFControl_Reader.hxx>
 #include <TDataStd_Name.hxx>
-#include <TDF_LabelSequence.hxx>
+#include <NCollection_Sequence.hxx>
+#include <TDF_Label.hxx>
 #include <TDocStd_Application.hxx>
 #include <TDocStd_Document.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
@@ -78,7 +79,7 @@ static std::string MaterialName(const TDF_Label& label,
                                 const Handle(XCAFDoc_MaterialTool) & matTool) {
   Handle(TCollection_HAsciiString) matName;
   Handle(TCollection_HAsciiString) matDescription;
-  Standard_Real density{};
+  double density{};
   Handle(TCollection_HAsciiString) densityName;
   Handle(TCollection_HAsciiString) densityValType;
   if (matTool->GetMaterial(label, matName, matDescription, density, densityName, densityValType)) {
@@ -97,9 +98,9 @@ static void CollectMaterials(const TDF_Label& label, const Handle(XCAFDoc_ShapeT
                              const Handle(XCAFDoc_MaterialTool) & matTool,
                              std::set<std::string>& out) {
   if (shapeTool->IsAssembly(label)) {
-    TDF_LabelSequence components;
-    shapeTool->GetComponents(label, components, /*recursive=*/Standard_False);
-    for (Standard_Integer i = 1; i <= components.Length(); ++i) {
+    NCollection_Sequence<TDF_Label> components;
+    shapeTool->GetComponents(label, components, /*recursive=*/false);
+    for (int i = 1; i <= components.Length(); ++i) {
       TDF_Label referred;
       if (shapeTool->GetReferredShape(components.Value(i), referred))
         CollectMaterials(referred, shapeTool, matTool, out);
@@ -306,8 +307,8 @@ int main(int argc, char** argv) {
   }
 
   STEPCAFControl_Reader reader;
-  reader.SetNameMode(Standard_True);
-  reader.SetMatMode(Standard_True);
+  reader.SetNameMode(true);
+  reader.SetMatMode(true);
 
   IFSelect_ReturnStatus status = reader.ReadFile(stepPath.c_str());
   if (status != IFSelect_RetDone) {
@@ -323,11 +324,11 @@ int main(int argc, char** argv) {
   Handle(XCAFDoc_MaterialTool) matTool = XCAFDoc_DocumentTool::MaterialTool(doc->Main());
 
   // ── Collect unique material/shape keys ────────────────────────────────────
-  TDF_LabelSequence freeShapes;
+  NCollection_Sequence<TDF_Label> freeShapes;
   shapeTool->GetFreeShapes(freeShapes);
 
   std::set<std::string> stepNames;
-  for (Standard_Integer i = 1; i <= freeShapes.Length(); ++i)
+  for (int i = 1; i <= freeShapes.Length(); ++i)
     CollectMaterials(freeShapes.Value(i), shapeTool, matTool, stepNames);
 
   if (stepNames.empty()) {
@@ -363,8 +364,8 @@ int main(int argc, char** argv) {
     for (const auto& name : stepNames) {
       auto it            = knownMappings.find(name);
       std::string mapped = (it != knownMappings.end()) ? it->second : "TODO";
-      out << "  <entry step_name=\"" << XmlAttr(name) << "\""
-          << " dd4hep_material=\"" << XmlAttr(mapped) << "\"/>\n";
+      out << "  <entry step_name=\"" << XmlAttr(name) << "\"" << " dd4hep_material=\""
+          << XmlAttr(mapped) << "\"/>\n";
     }
     out << "</material_map>\n";
   }
@@ -425,8 +426,8 @@ int main(int argc, char** argv) {
     for (const auto& name : stepNames) {
       auto it            = knownMappings.find(name);
       std::string mapped = (it != knownMappings.end()) ? it->second : "TODO";
-      out << "        <entry step_name=\"" << XmlAttr(name) << "\""
-          << " dd4hep_material=\"" << XmlAttr(mapped) << "\"/>\n";
+      out << "        <entry step_name=\"" << XmlAttr(name) << "\"" << " dd4hep_material=\""
+          << XmlAttr(mapped) << "\"/>\n";
     }
 
     out << "      </material_map>\n"

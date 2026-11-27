@@ -22,7 +22,7 @@
 #include <STEPCAFControl_Reader.hxx>
 #include <TDataStd_Name.hxx>
 #include <TDF_Label.hxx>
-#include <TDF_LabelSequence.hxx>
+#include <NCollection_Sequence.hxx>
 #include <TDF_Tool.hxx>
 #include <TDocStd_Application.hxx>
 #include <TDocStd_Document.hxx>
@@ -69,14 +69,14 @@ std::pair<G4RotationMatrix, G4ThreeVector> TrsfToG4(const gp_Trsf& trsf) {
 gp_Trsf LocationToTrsf(const TopLoc_Location& loc) {
   gp_Trsf result; // identity by default
   for (TopLoc_Location cursor = loc; !cursor.IsIdentity(); cursor = cursor.NextLocation()) {
-    gp_Trsf datum          = cursor.FirstDatum()->Trsf();
-    Standard_Integer power = cursor.FirstPower();
+    gp_Trsf datum = cursor.FirstDatum()->Trsf();
+    int power     = cursor.FirstPower();
     if (power < 0) {
       datum.Invert();
       power = -power;
     }
     gp_Trsf step; // identity
-    for (Standard_Integer k = 0; k < power; ++k) {
+    for (int k = 0; k < power; ++k) {
       step.Multiply(datum);
     }
     result.Multiply(step);
@@ -99,7 +99,7 @@ G4String GetLabelName(const TDF_Label& label) {
 G4String GetMaterialName(const TDF_Label& label, const Handle(XCAFDoc_MaterialTool) & matTool) {
   Handle(TCollection_HAsciiString) matName;
   Handle(TCollection_HAsciiString) matDescription;
-  Standard_Real density = 0.0;
+  double density = 0.0;
   Handle(TCollection_HAsciiString) densityName;
   Handle(TCollection_HAsciiString) densityValType;
   if (matTool->GetMaterial(label, matName, matDescription, density, densityName, densityValType)) {
@@ -119,13 +119,13 @@ G4String GetMaterialName(const TDF_Label& label, const Handle(XCAFDoc_MaterialTo
 ///   T_eff = composedTrsf * Translate(centroid)
 TopoDS_Shape RecenterShape(const TopoDS_Shape& shape, gp_Vec& centroid) {
   Bnd_Box bbox;
-  BRepBndLib::AddOptimal(shape, bbox, Standard_False);
+  BRepBndLib::AddOptimal(shape, bbox, false);
   if (bbox.IsVoid()) {
     centroid = gp_Vec(0.0, 0.0, 0.0);
     return shape;
   }
-  Standard_Real xMin = 0.0, yMin = 0.0, zMin = 0.0;
-  Standard_Real xMax = 0.0, yMax = 0.0, zMax = 0.0;
+  double xMin = 0.0, yMin = 0.0, zMin = 0.0;
+  double xMax = 0.0, yMax = 0.0, zMax = 0.0;
   bbox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
 
   centroid = gp_Vec(0.5 * (xMin + xMax), 0.5 * (yMin + yMax), 0.5 * (zMin + zMax));
@@ -196,10 +196,10 @@ void G4OCCTAssemblyVolume::ImportLabel(const TDF_Label& label, G4AssemblyVolume*
 
   // ── Assembly label: recurse into components ─────────────────────────────────
   if (shapeTool->IsAssembly(label)) {
-    TDF_LabelSequence components;
-    shapeTool->GetComponents(label, components, /*recursive=*/Standard_False);
+    NCollection_Sequence<TDF_Label> components;
+    shapeTool->GetComponents(label, components, /*recursive=*/false);
 
-    for (Standard_Integer i = 1; i <= components.Length(); ++i) {
+    for (int i = 1; i <= components.Length(); ++i) {
       const TDF_Label& comp = components.Value(i); // always a reference label
 
       // Extract the component's placement in the parent frame.
@@ -318,9 +318,9 @@ G4OCCTAssemblyVolume* G4OCCTAssemblyVolume::FromSTEP(const std::string& path,
   app->NewDocument("MDTV-CAF", doc);
 
   STEPCAFControl_Reader cafReader;
-  cafReader.SetNameMode(Standard_True);
-  cafReader.SetMatMode(Standard_True);
-  cafReader.SetColorMode(Standard_True);
+  cafReader.SetNameMode(true);
+  cafReader.SetMatMode(true);
+  cafReader.SetColorMode(true);
 
   if (cafReader.ReadFile(path.c_str()) != IFSelect_RetDone) {
     throw std::runtime_error("G4OCCTAssemblyVolume::FromSTEP: failed to read STEP file: " + path);
@@ -334,7 +334,7 @@ G4OCCTAssemblyVolume* G4OCCTAssemblyVolume::FromSTEP(const std::string& path,
   Handle(XCAFDoc_MaterialTool) matTool = XCAFDoc_DocumentTool::MaterialTool(doc->Main());
 
   // ── Collect top-level (free) shape labels ────────────────────────────────────
-  TDF_LabelSequence freeShapes;
+  NCollection_Sequence<TDF_Label> freeShapes;
   shapeTool->GetFreeShapes(freeShapes);
   if (freeShapes.IsEmpty()) {
     throw std::runtime_error(
@@ -352,7 +352,7 @@ G4OCCTAssemblyVolume* G4OCCTAssemblyVolume::FromSTEP(const std::string& path,
   };
 
   const gp_Trsf identity; // starts as the identity transformation
-  for (Standard_Integer i = 1; i <= freeShapes.Length(); ++i) {
+  for (int i = 1; i <= freeShapes.Length(); ++i) {
     ImportLabel(freeShapes.Value(i), result, identity, ctx);
   }
 

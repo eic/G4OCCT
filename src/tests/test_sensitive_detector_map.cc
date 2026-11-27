@@ -26,7 +26,7 @@
 #include <TCollection_HAsciiString.hxx>
 #include <TDataStd_Name.hxx>
 #include <TDF_Label.hxx>
-#include <TDF_LabelSequence.hxx>
+#include <NCollection_Sequence.hxx>
 #include <TDocStd_Application.hxx>
 #include <TDocStd_Document.hxx>
 #include <TopLoc_Location.hxx>
@@ -71,7 +71,7 @@ std::string BuildTwoPartSTEP(const std::string& path, const std::string& name1,
 
   auto addBox = [&](double sx, double sy, double sz, const std::string& pName,
                     const std::string& mName) {
-    TDF_Label lbl = shapeTool->AddShape(BRepPrimAPI_MakeBox(sx, sy, sz).Shape(), Standard_False);
+    TDF_Label lbl = shapeTool->AddShape(BRepPrimAPI_MakeBox(sx, sy, sz).Shape(), false);
     TDataStd_Name::Set(lbl, pName.c_str());
     TDF_Label mLbl = matTool->AddMaterial(
         new TCollection_HAsciiString(mName.c_str()), new TCollection_HAsciiString(""), 0.0,
@@ -83,8 +83,8 @@ std::string BuildTwoPartSTEP(const std::string& path, const std::string& name1,
   addBox(20.0, 20.0, 20.0, name2, mat2);
 
   STEPCAFControl_Writer writer;
-  writer.SetNameMode(Standard_True);
-  if (writer.Transfer(doc) != Standard_True)
+  writer.SetNameMode(true);
+  if (writer.Transfer(doc) != true)
     throw std::runtime_error("BuildTwoPartSTEP: Transfer failed");
   if (writer.Write(path.c_str()) != IFSelect_RetDone)
     throw std::runtime_error("BuildTwoPartSTEP: Write failed to " + path);
@@ -110,15 +110,14 @@ std::string BuildThreeIdenticalPartsSTEP(const std::string& path, const std::str
   // Three geometrically distinct boxes so XDE creates separate labels.
   double sizes[3][3] = {{10.0, 10.0, 10.0}, {20.0, 20.0, 20.0}, {30.0, 30.0, 30.0}};
   for (auto& sz : sizes) {
-    TDF_Label lbl =
-        shapeTool->AddShape(BRepPrimAPI_MakeBox(sz[0], sz[1], sz[2]).Shape(), Standard_False);
+    TDF_Label lbl = shapeTool->AddShape(BRepPrimAPI_MakeBox(sz[0], sz[1], sz[2]).Shape(), false);
     TDataStd_Name::Set(lbl, partName.c_str());
     matTool->SetMaterial(lbl, mLbl);
   }
 
   STEPCAFControl_Writer writer;
-  writer.SetNameMode(Standard_True);
-  if (writer.Transfer(doc) != Standard_True)
+  writer.SetNameMode(true);
+  if (writer.Transfer(doc) != true)
     throw std::runtime_error("BuildThreeIdenticalPartsSTEP: Transfer failed");
   if (writer.Write(path.c_str()) != IFSelect_RetDone)
     throw std::runtime_error("BuildThreeIdenticalPartsSTEP: Write failed to " + path);

@@ -27,7 +27,7 @@
 #include <TCollection_HAsciiString.hxx>
 #include <TDataStd_Name.hxx>
 #include <TDF_Label.hxx>
-#include <TDF_LabelSequence.hxx>
+#include <NCollection_Sequence.hxx>
 #include <TDocStd_Application.hxx>
 #include <TDocStd_Document.hxx>
 #include <TopLoc_Location.hxx>
@@ -72,7 +72,7 @@ std::string BuildSingleBoxSTEP(const std::string& tmpPath, const std::string& pa
   TopoDS_Shape box = BRepPrimAPI_MakeBox(sizeX, sizeY, sizeZ).Shape();
 
   // Add it to the XDE document as a free shape
-  TDF_Label shapeLabel = shapeTool->AddShape(box, /*makeAssembly=*/Standard_False);
+  TDF_Label shapeLabel = shapeTool->AddShape(box, /*makeAssembly=*/false);
 
   // Set the name attribute
   TDataStd_Name::Set(shapeLabel, partName.c_str());
@@ -86,8 +86,8 @@ std::string BuildSingleBoxSTEP(const std::string& tmpPath, const std::string& pa
 
   // Write to STEP via the CAF writer
   STEPCAFControl_Writer writer;
-  writer.SetNameMode(Standard_True);
-  if (writer.Transfer(doc) != Standard_True) {
+  writer.SetNameMode(true);
+  if (writer.Transfer(doc) != true) {
     throw std::runtime_error("BuildSingleBoxSTEP: Transfer failed");
   }
   if (writer.Write(tmpPath.c_str()) != IFSelect_RetDone) {
@@ -127,14 +127,14 @@ std::string BuildTwoBoxAssemblySTEP(const std::string& tmpPath, double txX) {
   // Create an XDE assembly from the compound.  makeAssembly=true causes OCCT
   // to decompose the compound into reference labels, one per sub-shape, each
   // carrying its sub-shape's location as an XCAFDoc_Location attribute.
-  TDF_Label asmLabel = shapeTool->AddShape(compound, /*makeAssembly=*/Standard_True);
+  TDF_Label asmLabel = shapeTool->AddShape(compound, /*makeAssembly=*/true);
   TDataStd_Name::Set(asmLabel, "TwoBoxAssembly");
 
   // Assign names to the referred prototype label(s) so that the material-map
   // lookup in ImportLabel can resolve them.
-  TDF_LabelSequence components;
-  shapeTool->GetComponents(asmLabel, components, /*recursive=*/Standard_False);
-  for (Standard_Integer i = 1; i <= components.Length(); ++i) {
+  NCollection_Sequence<TDF_Label> components;
+  shapeTool->GetComponents(asmLabel, components, /*recursive=*/false);
+  for (int i = 1; i <= components.Length(); ++i) {
     TDF_Label referred;
     if (shapeTool->GetReferredShape(components.Value(i), referred)) {
       TDataStd_Name::Set(referred, "BoxPart");
@@ -142,8 +142,8 @@ std::string BuildTwoBoxAssemblySTEP(const std::string& tmpPath, double txX) {
   }
 
   STEPCAFControl_Writer writer;
-  writer.SetNameMode(Standard_True);
-  if (writer.Transfer(doc) != Standard_True)
+  writer.SetNameMode(true);
+  if (writer.Transfer(doc) != true)
     throw std::runtime_error("BuildTwoBoxAssemblySTEP: Transfer failed");
   if (writer.Write(tmpPath.c_str()) != IFSelect_RetDone)
     throw std::runtime_error("BuildTwoBoxAssemblySTEP: Write failed to " + tmpPath);
@@ -163,20 +163,17 @@ std::string BuildNamingCollisionSTEP(const std::string& tmpPath) {
   Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
 
   // Three geometrically distinct shapes so XDE creates three separate labels.
-  TDF_Label label1 =
-      shapeTool->AddShape(BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape(), Standard_False);
-  TDF_Label label2 =
-      shapeTool->AddShape(BRepPrimAPI_MakeBox(20.0, 20.0, 20.0).Shape(), Standard_False);
-  TDF_Label label3 =
-      shapeTool->AddShape(BRepPrimAPI_MakeBox(30.0, 30.0, 30.0).Shape(), Standard_False);
+  TDF_Label label1 = shapeTool->AddShape(BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape(), false);
+  TDF_Label label2 = shapeTool->AddShape(BRepPrimAPI_MakeBox(20.0, 20.0, 20.0).Shape(), false);
+  TDF_Label label3 = shapeTool->AddShape(BRepPrimAPI_MakeBox(30.0, 30.0, 30.0).Shape(), false);
 
   TDataStd_Name::Set(label1, "Box");
   TDataStd_Name::Set(label2, "Box_1");
   TDataStd_Name::Set(label3, "Box");
 
   STEPCAFControl_Writer writer;
-  writer.SetNameMode(Standard_True);
-  if (writer.Transfer(doc) != Standard_True)
+  writer.SetNameMode(true);
+  if (writer.Transfer(doc) != true)
     throw std::runtime_error("BuildNamingCollisionSTEP: Transfer failed");
   if (writer.Write(tmpPath.c_str()) != IFSelect_RetDone)
     throw std::runtime_error("BuildNamingCollisionSTEP: Write failed to " + tmpPath);
@@ -209,21 +206,21 @@ std::string BuildNegativePowerAssemblySTEP(const std::string& tmpPath) {
   TopLoc_Location negLoc = posLoc.Inverted(); // negative power → –30 mm along X
   brepBuilder.Add(compound, protoBox.Located(negLoc));
 
-  TDF_Label asmLabel = shapeTool->AddShape(compound, Standard_True);
+  TDF_Label asmLabel = shapeTool->AddShape(compound, true);
   TDataStd_Name::Set(asmLabel, "NegPowerAsm");
 
   // Name the referred prototype so ImportLabel can resolve the material.
-  TDF_LabelSequence components;
-  shapeTool->GetComponents(asmLabel, components, Standard_False);
-  for (Standard_Integer i = 1; i <= components.Length(); ++i) {
+  NCollection_Sequence<TDF_Label> components;
+  shapeTool->GetComponents(asmLabel, components, false);
+  for (int i = 1; i <= components.Length(); ++i) {
     TDF_Label referred;
     if (shapeTool->GetReferredShape(components.Value(i), referred))
       TDataStd_Name::Set(referred, "BoxPart");
   }
 
   STEPCAFControl_Writer writer;
-  writer.SetNameMode(Standard_True);
-  if (writer.Transfer(doc) != Standard_True)
+  writer.SetNameMode(true);
+  if (writer.Transfer(doc) != true)
     throw std::runtime_error("BuildNegativePowerAssemblySTEP: Transfer failed");
   if (writer.Write(tmpPath.c_str()) != IFSelect_RetDone)
     throw std::runtime_error("BuildNegativePowerAssemblySTEP: Write failed to " + tmpPath);
@@ -492,7 +489,7 @@ TEST(AssemblyVolume, GetMaterialNameXCAFBranch) {
     Handle(XCAFDoc_MaterialTool) matTool = XCAFDoc_DocumentTool::MaterialTool(doc->Main());
 
     TDF_Label shapeLabel =
-        shapeTool->AddShape(BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape(), Standard_False);
+        shapeTool->AddShape(BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape(), false);
     TDataStd_Name::Set(shapeLabel, "SteelPart");
 
     TDF_Label matLabel = matTool->AddMaterial(
@@ -501,8 +498,8 @@ TEST(AssemblyVolume, GetMaterialNameXCAFBranch) {
     matTool->SetMaterial(shapeLabel, matLabel);
 
     STEPCAFControl_Writer writer;
-    writer.SetNameMode(Standard_True);
-    writer.SetMaterialMode(Standard_True);
+    writer.SetNameMode(true);
+    writer.SetMaterialMode(true);
     ASSERT_TRUE(writer.Transfer(doc));
     ASSERT_EQ(writer.Write(tmpPath.c_str()), IFSelect_RetDone);
   }

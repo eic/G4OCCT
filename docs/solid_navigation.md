@@ -165,7 +165,7 @@ EInside G4OCCTSolid::Inside(const G4ThreeVector& p) const {
     IntCurvesFace_Intersector& fi = *cache.faceIntersectors[i];
     fi.Perform(ray, -tolerance, Precision::Infinite());
     if (!fi.IsDone()) continue;
-    for (Standard_Integer j = 1; j <= fi.NbPnt(); ++j) {
+    for (int j = 1; j <= fi.NbPnt(); ++j) {
       const G4double w         = fi.WParameter(j);
       const TopAbs_State state = fi.State(j);
       if (std::abs(w) <= tolerance && (state == TopAbs_IN || state == TopAbs_ON))
@@ -239,7 +239,7 @@ G4ThreeVector G4OCCTSolid::SurfaceNormal(const G4ThreeVector& p) const {
   // Step 3: project point onto face and evaluate normal
   BRepAdaptor_Surface surf(TopoDS::Face(closest));
   gp_Pnt projPnt;
-  Standard_Real u, v;
+  double u, v;
   GeomAPI_ProjectPointOnSurf proj(gp_Pnt(p.x(), p.y(), p.z()),
                                   surf.Surface().Surface());
   proj.LowerDistanceParameters(u, v);
@@ -280,7 +280,7 @@ G4double G4OCCTSolid::DistanceToIn(const G4ThreeVector& p,
     if (cache.expandedBoxes[i].IsOut(ray)) continue;  // O(1) AABB reject
     IntCurvesFace_Intersector& fi = *cache.faceIntersectors[i];
     fi.Perform(ray, kCarTolerance, Precision::Infinite());
-    for (Standard_Integer j = 1; j <= fi.NbPnt(); ++j) {
+    for (int j = 1; j <= fi.NbPnt(); ++j) {
       const G4double w = fi.WParameter(j);
       if (w > kCarTolerance && w < minDistance) minDistance = w;
     }
@@ -370,7 +370,7 @@ G4double G4OCCTSolid::DistanceToOut(const G4ThreeVector& p,
     IntCurvesFace_Intersector& fi = *cache.faceIntersectors[i];
     fi.Perform(ray, tolerance, Precision::Infinite());
     if (!fi.IsDone()) continue;
-    for (Standard_Integer j = 1; j <= fi.NbPnt(); ++j) {
+    for (int j = 1; j <= fi.NbPnt(); ++j) {
       const G4double w = fi.WParameter(j);
       if (w > tolerance && w < minDistance) {
         minDistance = w;
@@ -468,7 +468,7 @@ via `BRepBndLib::Add` and stored as a member.  `GetExtent` simply unpacks it.
 ```cpp
 G4VisExtent G4OCCTSolid::GetExtent() const {
   if (fCachedBounds.IsVoid()) return G4VisExtent(-1, 1, -1, 1, -1, 1);
-  Standard_Real xmin, ymin, zmin, xmax, ymax, zmax;
+  double xmin, ymin, zmin, xmax, ymax, zmax;
   fCachedBounds.Get(xmin, ymin, zmin, xmax, ymax, zmax);
   return G4VisExtent(xmin, xmax, ymin, ymax, zmin, zmax);
 }
@@ -528,7 +528,7 @@ Same `fCachedBounds` member as `GetExtent()`.  No OCCT call at query time.
 ```cpp
 void G4OCCTSolid::BoundingLimits(G4ThreeVector& pMin,
                                   G4ThreeVector& pMax) const {
-  Standard_Real xmin, ymin, zmin, xmax, ymax, zmax;
+  double xmin, ymin, zmin, xmax, ymax, zmax;
   fCachedBounds.Get(xmin, ymin, zmin, xmax, ymax, zmax);
   pMin = G4ThreeVector(xmin, ymin, zmin);
   pMax = G4ThreeVector(xmax, ymax, zmax);

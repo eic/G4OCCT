@@ -162,6 +162,14 @@ AI agents) must follow these instructions.
 
 Do not lower these version floors without an explicit project decision.
 
+- **No deprecated OCCT aliases.**  Newer OCCT releases (shipped in
+  `eic_xl:nightly`) mark the `Standard_*` typedefs and many collection
+  aliases as deprecated, which fails the `-Werror` build.  Use the
+  underlying types directly: `double`, `int`, `bool`, `true`/`false`,
+  `NCollection_Sequence<TDF_Label>` (not `Standard_Real`, `Standard_Integer`,
+  `Standard_Boolean`, `Standard_True`/`Standard_False`, `TDF_LabelSequence`).
+  These are identical typedefs in OCCT 7.8, so no compatibility is lost.
+
 ---
 
 ## 4. CMake Conventions

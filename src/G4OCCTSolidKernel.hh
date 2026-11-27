@@ -36,7 +36,7 @@ namespace g4occt::detail {
  * Relative tessellation deflection shared by kernel-side BVH/surface-sampling
  * meshing and adapter-side visualisation meshing.
  */
-inline constexpr Standard_Real kOCCTRelativeDeflection = 0.01;
+inline constexpr double kOCCTRelativeDeflection = 0.01;
 
 /**
  * @brief Shared OCCT-backed query kernel used by adapter frontends.
@@ -216,7 +216,7 @@ private:
     TopoDS_Face face;
     G4double distance{Infinity()};
     std::size_t faceIndex{0};
-    std::optional<std::pair<Standard_Real, Standard_Real>> uv;
+    std::optional<std::pair<double, double>> uv;
   };
 
   /// Return a classifier cache initialised for the current shape generation.

@@ -15,7 +15,8 @@
 #include <Bnd_Box.hxx>
 #include <IFSelect_ReturnStatus.hxx>
 #include <STEPCAFControl_Reader.hxx>
-#include <TDF_LabelSequence.hxx>
+#include <NCollection_Sequence.hxx>
+#include <TDF_Label.hxx>
 #include <TDocStd_Document.hxx>
 #include <XCAFApp_Application.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
@@ -57,7 +58,7 @@ bool IsAssemblySTEP(const std::string& path) {
   }
 
   Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
-  TDF_LabelSequence freeShapes;
+  NCollection_Sequence<TDF_Label> freeShapes;
   shapeTool->GetFreeShapes(freeShapes);
 
   if (freeShapes.Length() > 1) {
@@ -182,7 +183,7 @@ G4VPhysicalVolume* G4OCCTDetectorConstruction::Construct() {
     auto* solid = G4OCCTSolid::FromSTEP(name, entry.file);
 
     Bnd_Box bbox;
-    BRepBndLib::AddOptimal(solid->GetOCCTShape(), bbox, /*useTriangulation=*/Standard_False);
+    BRepBndLib::AddOptimal(solid->GetOCCTShape(), bbox, /*useTriangulation=*/false);
     totalBounds.Add(bbox);
     hasBounds = true;
 
@@ -216,7 +217,7 @@ G4VPhysicalVolume* G4OCCTDetectorConstruction::Construct() {
     for (const auto& [lvName, lv] : assembly->GetLogicalVolumes()) {
       if (auto* occSolid = dynamic_cast<G4OCCTSolid*>(lv->GetSolid())) {
         Bnd_Box bbox;
-        BRepBndLib::AddOptimal(occSolid->GetOCCTShape(), bbox, Standard_False);
+        BRepBndLib::AddOptimal(occSolid->GetOCCTShape(), bbox, false);
         totalBounds.Add(bbox);
         hasBounds = true;
       }
@@ -228,7 +229,7 @@ G4VPhysicalVolume* G4OCCTDetectorConstruction::Construct() {
   G4ThreeVector halfSize = fWorldHalfSize;
   if (halfSize.mag2() == 0.0) {
     if (hasBounds && !totalBounds.IsVoid()) {
-      Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
+      double xMin, yMin, zMin, xMax, yMax, zMax;
       totalBounds.Get(xMin, yMin, zMin, xMax, yMax, zMax);
       const double pad = 1.1;
       halfSize         = G4ThreeVector(pad * std::max(std::abs(xMax), std::abs(xMin)) * mm,
